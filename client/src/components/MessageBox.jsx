@@ -15,10 +15,11 @@ import {
   Divider,
 } from "@mui/material";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import SendIcon from "@mui/icons-material/Send";
+import { useAuthContext } from "../context/AuthContext";
 
 function MessageBox({message}) {
-  const userName = localStorage.getItem("userName");
+  const { authUser } = useAuthContext();
+  const { userName } = authUser
   return (
     <Box
     //   key={key}

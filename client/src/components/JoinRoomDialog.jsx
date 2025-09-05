@@ -49,13 +49,6 @@ function JoinRoomDialog({open, onClose}) {
     // formJson.id = uniqueId;
     // formJson.createdAt = new Date();
     createRoom(formJson.userId);
-    // AddUser ()
-
-
-    // socket.
-
-    // awaitcreateUser
-
     console.log('formJson :', formJson);
     handleClose();
   };

@@ -1,13 +1,9 @@
-import React from 'react'
-import WelcomePage from './WelcomePage'
-import { Outlet } from 'react-router-dom'
+import React from "react";
+import WelcomePage from "./WelcomePage";
+import { Outlet } from "react-router-dom";
 
-function BaseLayout({children}) {
-  return (
-    <WelcomePage>
-        {children}
-    </WelcomePage>
-  )
+function BaseLayout() {
+  return <Outlet />;
 }
 
 export default BaseLayout;

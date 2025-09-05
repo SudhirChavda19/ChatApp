@@ -1,14 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import { motion } from "framer-motion"; // for animation
 import JoinRoomDialog from "./JoinRoomDialog";
+import { useAuthContext } from "../context/AuthContext";
+import { getConfiremedUsers } from "../utils/userDao";
+import { useDBContext } from "../context/DBContext";
 
-const NoUserFallback = ({ userName, isUsersAvailable }) => {
-console.log('userName :', userName);
-console.log('isUsersAvailable ===========:', isUsersAvailable);
+
+const NoUserFallback = ({isUsersAvailable}) => {
+console.log('isUsersAvailable :', isUsersAvailable);
+
+  const db = useDBContext();
+  const { authUser } = useAuthContext();
   const [openDialog, setOpenDialog] = useState(false);
+  const [confiremedUsers, setConfiremedUsers] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      const confiremedUserData = await getConfiremedUsers(db);
+      if (confiremedUserData.length > 0) setConfiremedUsers(confiremedUserData);
+    })()
+  }, [isUsersAvailable])
 
   const handleClickOpen = () => {
     setOpenDialog(true);
@@ -18,7 +32,7 @@ console.log('isUsersAvailable ===========:', isUsersAvailable);
     setOpenDialog(false);
   };
 
-  const Icon = isUsersAvailable ? ChatBubbleIcon : ChatBubbleOutlineIcon ;
+  const Icon = confiremedUsers.length > 0 ? ChatBubbleIcon : ChatBubbleOutlineIcon ;
   return (
     <Box
       sx={{
@@ -46,15 +60,15 @@ console.log('isUsersAvailable ===========:', isUsersAvailable);
       </motion.div>
 
       <Typography variant="h5" sx={{ mt: 3, fontWeight: "bold" }}>
-        {isUsersAvailable ? `Welcome 👋 ${userName} ❄` : "No conversations yet"}
+        {confiremedUsers.length > 0 ? `Welcome 👋 ${authUser.userName} ❄` : "No conversations yet"}
       </Typography>
       <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
-        {isUsersAvailable
+        {confiremedUsers.length > 0
           ? "Select a chat to start messaging"
           : "Looks like you don’t have any users to chat with. Start a new conversation and connect with your team!"}
       </Typography>
 
-      {!isUsersAvailable && (
+      {!(confiremedUsers.length > 0) && (
         <div>
           <Button
             variant="contained"

@@ -100,13 +100,13 @@ function Chat({ children }) {
           {/* SideBar*/}
           <SideBar getAvailableUsers={getAvailableUsers} />
           <Divider orientation="vertical" flexItem />
-          <Outlet />
+          <Outlet isUsersAvailable={confiremedUsers ? true : false}/>
           {/* { confiremedUsers && confiremedUsers.length > 0 ? (
           <Outlet />
           ) : (
             <NoUserFallback userName={userName} />
             )} */}
-          {/* <NoUserFallback userName={userName} isUsersAvailable={confiremedUsers ? true : false}/> */}
+          {/* <NoUserFallback userName={userName} /> */}
         </Card>
     </>
   );

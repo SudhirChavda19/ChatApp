@@ -16,6 +16,7 @@ import {
   Tooltip,
   Tabs,
   Tab,
+  LinearProgress,
   Button,
   TextField,
   Dialog,
@@ -23,6 +24,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Skeleton,
 } from "@mui/material";
 import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import ChatIcon from "@mui/icons-material/Chat";
@@ -43,13 +45,15 @@ import {
 import { useDBContext } from "../context/DBContext";
 import JoinRoomDialog from "./JoinRoomDialog";
 import { useSocketContext } from "../context/SocketContext";
+import ListUser from "./ListUser";
 
-function SideBar({getAvailableUsers}) {
+function SideBar({ getAvailableUsers }) {
   const [requestedUsers, setRequestedUsers] = useState([]);
   const [confiremedUsers, setConfiremedUsers] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [openTooltip, setOpenTooltip] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
+  // const [loading, setLoading] = useState(true);
 
   const socket = useSocketContext();
   const db = useDBContext();
@@ -60,49 +64,55 @@ function SideBar({getAvailableUsers}) {
 
   useEffect(() => {
     (async () => {
-      const requestedUsersData = await getRequestedUsers(db);
-      console.log("requestedUsers :", requestedUsers);
-      const confiremedUsersData = await getConfiremedUsers(db);
-      console.log("confiremedUsers :", confiremedUsers);
-      if (requestedUsersData) setRequestedUsers(requestedUsersData);
-      if (confiremedUsersData) setConfiremedUsers(confiremedUsersData);
-      getAvailableUsers(confiremedUsers.length);
+      try {
+        const [requestedUsersData, confiremedUsersData] = await Promise.all([
+          getRequestedUsers(db),
+          getConfiremedUsers(db),
+        ]);
+        console.log("requestedUsers :", requestedUsersData);
+        console.log("confiremedUsers :", confiremedUsersData);
+        if (requestedUsersData.length > 0)
+          setRequestedUsers(requestedUsersData);
+        if (confiremedUsersData.length > 0)
+          setConfiremedUsers(confiremedUsersData);
+        getAvailableUsers(confiremedUsers?.length || 0);
+        // setLoading(false);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        // setLoading(false);
+      }
     })();
-  }, []);
+  }, [db]);
 
   useEffect(() => {
-    socket.on("request-to-join-room", ({ roomId, userData }) => {
+    socket.on("request-to-join-room", async ({ roomId, userData }) => {
       console.log("request-to-join-room:", { roomId, userData });
-      setRequestedUsers((users) => [
-        ...users,
-        {
-          id: userData.id,
-          name: userData.name,
-          roomId,
-          requested: true,
-        },
-      ]);
+      const userObject = {
+        id: userData.id,
+        name: userData.name,
+        roomId,
+        requested: true,
+        createdAt: new Date(),
+      };
+      setRequestedUsers((users) => [...users, userObject]);
+      await createUser(userObject, db);
     });
   }, []);
 
   useEffect(() => {
     socket.on("request-accepted", ({ roomId, userData }) => {
       console.log("receive-user-data-after-room-joined", { roomId, userData });
-      setConfiremedUsers((users) => [
-        ...users,
-        { roomId, ...userData, requested: false },
-      ]);
-      const updatedUser = [...confiremedUsers, { roomId, ...userData, requested: false }]
+      const userObject = {
+        id: userData.id,
+        name: userData.name,
+        roomId,
+        requested: false,
+        createdAt: new Date(),
+      };
+      setConfiremedUsers((users) => [...users, userObject]);
+      const updatedUser = [...confiremedUsers, userObject];
       getAvailableUsers(updatedUser.length);
-
-      // const userObject = {
-      //   id: userData.id,
-      //   name: userData.name,
-      //   roomId,
-      //   requested: false,
-      //   createdAt: new Date(),
-      // };
-      // createUser(userObject, db);
+      createUser(userObject, db);
     });
   }, []);
 
@@ -128,31 +138,29 @@ function SideBar({getAvailableUsers}) {
     setOpenTooltip(true);
   };
 
-  const handleOpenUserChat = (user) => {
-    console.log("handleOpenUserChat :", userId);
-    navigate(`/chat/user/${user.id}`, { state: { user }});
-  };
-
   const handleTabChange = (event, newValue) => {
     console.log("requestedUsers", requestedUsers);
     setTabvalue(newValue);
   };
 
-  const handleAcceptRequest = async ({roomId, id, name }) => {
+  const handleAcceptRequest = async ({ roomId, id, name }) => {
     const sendUserData = { id: userId, name: userName };
     socket.emit("request-accepted", {
       roomId,
       receiverId: id,
       userData: sendUserData,
     });
-    const status = false;
-    // await updateRequestStatus(receiverId, status, db)
-    setRequestedUsers((users) => users.filter((user) => user.id != id))
-    setConfiremedUsers((users) => [
-      ...users,
-      { roomId, id, name, requested: false },
-    ]);
-    const updatedUser = [...confiremedUsers, { roomId, id, name, requested: false }]
+    const userObject = {
+      id,
+      name,
+      roomId,
+      requested: false,
+      createdAt: new Date(),
+    };
+    updateRequestStatus(id, userObject, db);
+    setRequestedUsers((users) => users.filter((user) => user.id != id));
+    setConfiremedUsers((users) => [...users, userObject]);
+    const updatedUser = [...confiremedUsers, userObject];
     await getAvailableUsers(updatedUser.length);
   };
 
@@ -182,6 +190,13 @@ function SideBar({getAvailableUsers}) {
       </Typography>
     </Box>
   );
+
+  // if (loading)
+  //   return (
+  //     <Box sx={{ width: "100%" }}>
+  //       <LinearProgress color="primary" />
+  //     </Box>
+  //   );
 
   return (
     <Box
@@ -232,7 +247,7 @@ function SideBar({getAvailableUsers}) {
           </Tabs>
         </ListItem>
         {tabValue === 0 ? (
-          confiremedUsers.length > 0 ? (
+          confiremedUsers && confiremedUsers.length > 0 ? (
             <ListItem>
               <List
                 dense
@@ -240,92 +255,36 @@ function SideBar({getAvailableUsers}) {
                   width: "100%",
                   maxWidth: 360,
                   bgcolor: "background.paper",
+                  padding: "0px"
                 }}
               >
                 {confiremedUsers?.map((user) => {
-                  const labelId = `checkbox-list-secondary-label-${user.id}`;
-                  return (
-                    <ListItem
-                      key={user.id}
-                      sx={{
-                        backgroundColor: "#f3f3f3",
-                        borderRadius: "12px",
-                        padding: 0,
-                        margin: 0
-                      }}
-                    >
-                      <ListItemButton
-                        sx={{
-                          padding: "8px",
-                          backgroundColor: "#f3f3f3",
-                          borderRadius: "12px",
-                        }}
-                        onClick={() => {
-                          handleOpenUserChat(user);
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <Avatar
-                            alt={`Avatar n°${user.name}`}
-                            src={`/static/images/avatar/${user.name}.jpg`}
-                          />
-                        </ListItemAvatar>
-                        <ListItemText id={labelId} primary={`${user.name}`} />
-                      </ListItemButton>
-                    </ListItem>
-                  );
+
+                   return <ListUser key={user.id} userData={user} />;
+
                 })}
               </List>
             </ListItem>
           ) : (
             <NoDataComponent />
           )
-        ) : requestedUsers.length > 0 ? (
+        ) : requestedUsers && requestedUsers.length > 0 ? (
           <ListItem>
             <List
               dense
-              sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
+              sx={{
+                width: "100%",
+                maxWidth: 360,
+                bgcolor: "background.paper",
+              }}
             >
               {requestedUsers?.map((user) => {
-                const labelId = `checkbox-list-secondary-label-${user.id}`;
                 return (
-                  <ListItem
+                  <ListUser
                     key={user.id}
-                    sx={{
-                      backgroundColor: "#f3f3f3",
-                      borderRadius: "12px",
-                      padding: "8px"
-                    }}
-                  >
-                    {/* <ListItemButton
-                      sx={{ padding: "4px 0px" }}
-                      onClick={handleOpenUserChat(user.userId)}
-                    > */}
-                    <ListItemAvatar>
-                      <Avatar
-                        alt={`Avatar n°${user.name}`}
-                        src={`/static/images/avatar/${user.name}.jpg`}
-                      />
-                    </ListItemAvatar>
-                    <ListItemText id={labelId} primary={`${user.name}`} />
-                    <Tooltip title="Accept" placement="top">
-                      <IconButton
-                        sx={{ minWidth: "24px" }}
-                        onClick={() => {
-                          handleAcceptRequest(user);
-                        }}
-                      >
-                        <CheckIcon color="primary" />
-                      </IconButton>
-                    </Tooltip>
-                    {/* <IconButton
-                      sx={{ minWidth: "24px" }}
-                      onClick={handleRejectRequest}
-                    >
-                      <ClearIcon color="primary" />
-                    </IconButton> */}
-                    {/* </ListItemButton> */}
-                  </ListItem>
+                    userData={user}
+                    handleAcceptRequest={handleAcceptRequest}
+                  />
                 );
               })}
             </List>

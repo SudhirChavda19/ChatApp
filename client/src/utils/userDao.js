@@ -16,82 +16,112 @@ export const createUser = async (data, db) => {
 };
 
 export const getUsers = async (userId, db) => {
-  const request = db.transaction(userTable).objectStore(userTable).openCursor();
+  return new Promise((resolve, reject) => {
+    const result = [];
 
-  const result = [];
-  request.onsuccess = () => {
-    const cursor = request.result;
-    if (cursor) {
-      // Exclude based on id
-      if (!userId.includes(cursor.value.id)) {
-        result.push(cursor.value);
-      }
-      cursor.continue();
-    } else {
-      return result;
+    try {
+      const transaction = db.transaction(userTable, "readonly");
+      const store = transaction.objectStore(userTable);
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          if (!userId.includes(cursor.value.id)) {
+            result.push(cursor.value);
+          }
+          cursor.continue();
+        } else {
+          resolve(result);
+        }
+      };
+
+      request.onerror = (event) => {
+        console.error("Error while get users:", event.target.error);
+        reject(new Error("Error while get users"));
+      };
+    } catch (err) {
+      reject(err);
     }
-  };
-  request.onerror = (error) => {
-    console.log("error :", error);
-    throw new Error("Error while get users: ", error);
-  };
+  });
 };
 
 export const getRequestedUsers = async (db) => {
-  const request = db.transaction(userTable).objectStore(userTable).openCursor();
+  return new Promise((resolve, reject) => {
+    try {
+      const request = db
+        .transaction(userTable)
+        .objectStore(userTable)
+        .openCursor();
 
-  const result = [];
-  request.onsuccess = () => {
-    const cursor = request.result;
-    if (cursor) {
-      // Exclude based on id
-      if (cursor.value.requested) {
-        result.push(cursor.value);
-      }
-      cursor.continue();
-    } else {
-      return result;
+      const result = [];
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          // Exclude based on id
+          if (cursor.value.requested) {
+            result.push(cursor.value);
+          }
+          cursor.continue();
+        } else {
+          resolve(result);
+        }
+      };
+      request.onerror = (error) => {
+        console.log("error :", error);
+        reject(new Error("Error while get users", error));
+      };
+    } catch (error) {
+      console.error("Error while getting requested Data: ", error);
+      reject(error);
     }
-  };
-  request.onerror = (error) => {
-    console.log("error :", error);
-    throw new Error("Error while get users: ", error);
-  };
+  });
 };
 
 export const getConfiremedUsers = async (db) => {
-  const request = db.transaction(userTable).objectStore(userTable).openCursor();
+  return new Promise((resolve, reject) => {
+    try {
+      const request = db
+        .transaction(userTable)
+        .objectStore(userTable)
+        .openCursor();
 
-  const result = [];
-  request.onsuccess = () => {
-    const cursor = request.result;
-    if (cursor) {
-      // Exclude based on id
-      if (!cursor.value.requested) {
-        result.push(cursor.value);
-      }
-      cursor.continue();
-    } else {
-      return result;
+      const result = [];
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          // Exclude based on id
+          if (cursor.value?.requested === false) {
+            result.push(cursor.value);
+          }
+          cursor.continue();
+        } else {
+          resolve(result);
+        }
+      };
+      request.onerror = (error) => {
+        console.log("error :", error);
+        reject(new Error("Error while getting Confiremed Users: ", error));
+      };
+    } catch (error) {
+      console.error("Error while getting Confiremed Users: ", error);
+      reject(error);
     }
-  };
-  request.onerror = (error) => {
-    console.log("error :", error);
-    throw new Error("Error while get users: ", error);
-  };
+  });
 };
 
-export const updateRequestStatus = async (id, status, db) => {
-  const request = db.transaction(userTable).objectStore(userTable);
+export const updateRequestStatus = async (id, { requested, createdAt }, db) => {
+  const objectStore = db.transaction(userTable, "readwrite").objectStore(userTable);
 
-  const newRequest = request.get(id);
-  newRequest.onsuccess = () => {
-    const user = newRequest.result;
+  const request = objectStore.get(id);
+  request.onsuccess = () => {
+    const user = request.result;
+    console.log('user :', user)
     if (user) {
-      user.requested = status;
+      user.requested = requested;
+      user.createdAt = createdAt;
     }
-
-    const updateRequest = request.update(user);
+    const updateRequest = objectStore.put(user);
     updateRequest.onsuccess = () => {
       console.log(`User updated: ${updateRequest.result}`);
     };
@@ -100,7 +130,7 @@ export const updateRequestStatus = async (id, status, db) => {
       throw new Error("Error while Update User: ", error);
     };
   };
-  newRequest.onerror = (error) => {
+  request.onerror = (error) => {
     console.log("error :", error);
     throw new Error("Error while update operation: ", error);
   };

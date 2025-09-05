@@ -23,7 +23,7 @@ let users = [];
 const userSocketMap = {};
 
 const getReceiverSocketId = (receiverId) => {
-	return userSocketMap[receiverId];
+  return userSocketMap[receiverId];
 };
 
 io.on("connection", (socket) => {
@@ -31,26 +31,30 @@ io.on("connection", (socket) => {
   console.log("UserID::::::::: ", socket.handshake.query.userId);
 
   const userId = socket.handshake.query?.userId;
-  console.log('userId :', userId);
   if (userId != "undefined") userSocketMap[userId] = socket.id;
 
   socket.on("create-room", ({ roomId, receiverId, userData }) => {
-    socket.join(roomId);
-    const receiverUserId = getReceiverSocketId(receiverId)
-    socket.to(receiverUserId).emit("request-to-join-room", { roomId, userData });
+    const receiverUserId = getReceiverSocketId(receiverId);
+    socket
+      .to(receiverUserId)
+      .emit("request-to-join-room", { roomId, userData });
   });
 
   socket.on("request-accepted", ({ roomId, receiverId, userData }) => {
-  console.log('receiverId :', receiverId);
-    socket.join(roomId);
-    const receiverUserId = getReceiverSocketId(receiverId)
-    console.log('receiverUserId :', receiverUserId);
+    const receiverUserId = getReceiverSocketId(receiverId);
     socket.to(receiverUserId).emit("request-accepted", { roomId, userData });
   });
 
-  socket.on("message", (data) => {
-    console.log(data);
-    io.emit("receive-message", data);
+  socket.on("join-room", (roomId) => {
+    socket.join(roomId)
+  })
+
+  socket.on("send-private-message", (data) => {
+    const clients = io.sockets.adapter.rooms;
+    console.log('clients :', clients);
+    console.log("private-message", data);
+    // socket.join(data.roomId);
+    socket.to(data.receiverId).emit("receive-private-message", data);
   });
 
   socket.on("new-user", (data) => {
@@ -67,7 +71,7 @@ io.on("connection", (socket) => {
     // users = users.filter((user) => user.socketID !== socket.id);
     // console.log(users);
     //Sends the list of users to the client
-    io.emit("new-user-response", users);
+    // io.emit("new-user-response", users);
     socket.disconnect();
   });
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useContext } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import {
   Avatar,
   AppBar,
@@ -18,6 +18,8 @@ import { getUsers } from "../utils/userDao";
 import { useDBContext } from "../context/DBContext";
 import NoUserFallback from "./NoUserFallBack";
 import { useSocketContext } from "../context/SocketContext";
+import { useAuthContext } from "../context/AuthContext";
+import { v4 as uuidv4 } from 'uuid';
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -29,36 +31,44 @@ function ChatBox() {
   const db = useDBContext();
   const { id } = useParams();
   const location = useLocation();
-
-  const userName = localStorage.getItem("userName");
+  const navigate = useNavigate();
+  const { authUser } = useAuthContext();
 
   useEffect(() => {
-    if (location.state?.user) {
+    console.log("location :", location);
+    if (!location.state || !location.state?.user) {
+      navigate("/chat", { replace: true });
+    } else if (location.state.user) {
       setUser(location.state.user);
     }
   }, [id]);
 
+  useEffect(() => {
+    socket.emit("join-room", user.roomId)
+  },[])
+
+  useEffect(() => {
+    socket.on("receive-private-message", (data) => {
+      console.log("receive-private-message", data);
+    })
+  }, [])
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (message.trim() && userName) {
+    if (message.trim() && authUser.userName && user.id) {
       console.log("---------------------------------");
-
-      // setAllMessages([...allMessages, {
-      //   text: message,
-      //   name: userName,
-      //   id: `${socket.id}${Math.random()}`,
-      //   socketID: socket.id,
-      //   timestamp: new Date()
-      // }]);
-      socket.emit("message", {
+      const messageObject = {
+        roomId: user.roomId,
         text: message,
-        name: userName,
-        id: `${socket.id}${Math.random()}`,
-        socketID: socket.id,
+        receiverId: user.id,
+        id: uuidv4(),
+        senderId: authUser.userId,
         timestamp: new Date(),
-      });
+      }
+
+      setAllMessages((message) => [...message, messageObject]);
+      socket.emit("send-private-message", messageObject);
     }
-    // console.log("allMessages :", allMessages);
     setMessage("");
   };
 
@@ -74,7 +84,7 @@ function ChatBox() {
       {/* Header */}
       <AppBar position="static">
         <Toolbar>
-          <Avatar alt="Lemy Sharp" src="/static/images/avatar/1.jpg" />
+          <Avatar alt={user.name} src="/static/images/avatar/1.jpg" />
           <Typography variant="h6" sx={{ ml: 1 }}>
             {user.name}
           </Typography>
@@ -83,9 +93,9 @@ function ChatBox() {
 
       {/* Chat messages (scrollable middle) */}
       <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
-        {/* {allMessages.map((msg) => (
+        {allMessages.map((msg) => (
               <MessageBox key={msg.id} message={msg} />
-            ))} */}
+            ))}
         <div ref={lastMessageRef}></div>
       </Box>
 

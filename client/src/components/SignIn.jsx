@@ -27,7 +27,7 @@ function SignIn() {
       createdAt: new Date()
     }
     createUser(userData, db);
-    navigate("/chat");
+    navigate("/chat", { replace: true });
   };
 
   return (
