@@ -60,7 +60,7 @@ console.log('isUsersAvailable :', isUsersAvailable);
       </motion.div>
 
       <Typography variant="h5" sx={{ mt: 3, fontWeight: "bold" }}>
-        {confiremedUsers.length > 0 ? `Welcome 👋 ${authUser.userName} ❄` : "No conversations yet"}
+        {confiremedUsers.length > 0 ? `Hiiiiiiiiiiiii 👋 ${authUser.userName} ❄` : "No conversations yet"}
       </Typography>
       <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
         {confiremedUsers.length > 0

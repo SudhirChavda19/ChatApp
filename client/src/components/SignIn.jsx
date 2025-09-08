@@ -24,7 +24,7 @@ function SignIn() {
     const userData = {
       id: uniqueId,
       name: userName,
-      createdAt: new Date()
+      createdAt: Date.now()
     }
     createUser(userData, db);
     navigate("/chat", { replace: true });

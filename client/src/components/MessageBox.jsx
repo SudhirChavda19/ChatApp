@@ -19,13 +19,12 @@ import { useAuthContext } from "../context/AuthContext";
 
 function MessageBox({message}) {
   const { authUser } = useAuthContext();
-  const { userName } = authUser
+  const { userId } = authUser
   return (
     <Box
-    //   key={key}
       sx={{
         display: "flex",
-        justifyContent: message.name === userName ? "flex-end" : "flex-start",
+        justifyContent: message.senderid === userId ? "flex-end" : "flex-start",
         mb: 1,
       }}
     >
@@ -34,11 +33,11 @@ function MessageBox({message}) {
         sx={{
           padding: "8px",
           maxWidth: "60%",
-          bgcolor: message.name === userName ? "primary.main" : "grey.300",
-          color: message.name === userName ? "white" : "black",
+          bgcolor: message.senderid === userId ? "primary.main" : "grey.300",
+          color: message.senderid === userId ? "white" : "black",
           borderRadius: 3,
-          borderTopRightRadius: message.name === userName ? 0 : 12,
-          borderTopLeftRadius: message.name === userName ? 12 : 0,
+          borderTopRightRadius: message.senderid === userId ? 0 : 12,
+          borderTopLeftRadius: message.senderid === userId ? 12 : 0,
         }}
       >
         <Typography
@@ -51,14 +50,14 @@ function MessageBox({message}) {
             fontSize: "17px",
           }}
         >
-          {message.text}
+          {message.message}
         </Typography>
 
         <Typography
           variant="caption"
           gutterBottom
-          align={message.name === userName ? "right" : "left"}
-          sx={{ display: "block", margin: "0px", lineHeight: 1 }}
+          align={message.senderid === userId ? "right" : "left"}
+          sx={{ display: "block", margin: "0px", lineHeight: 1, fontSize: "9px" }}
         >
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: "numeric",

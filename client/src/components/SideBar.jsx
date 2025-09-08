@@ -85,17 +85,18 @@ function SideBar({ getAvailableUsers }) {
   }, [db]);
 
   useEffect(() => {
-    socket.on("request-to-join-room", async ({ roomId, userData }) => {
+    socket.on("request-to-join-room", async ({ roomId, userData }, callback) => {
       console.log("request-to-join-room:", { roomId, userData });
       const userObject = {
         id: userData.id,
         name: userData.name,
         roomId,
         requested: true,
-        createdAt: new Date(),
+        createdAt: Date.now(),
       };
       setRequestedUsers((users) => [...users, userObject]);
       await createUser(userObject, db);
+      callback({ status: true});
     });
   }, []);
 
@@ -107,7 +108,7 @@ function SideBar({ getAvailableUsers }) {
         name: userData.name,
         roomId,
         requested: false,
-        createdAt: new Date(),
+        createdAt: Date.now(),
       };
       setConfiremedUsers((users) => [...users, userObject]);
       const updatedUser = [...confiremedUsers, userObject];
@@ -155,7 +156,7 @@ function SideBar({ getAvailableUsers }) {
       name,
       roomId,
       requested: false,
-      createdAt: new Date(),
+      createdAt: Date.now(),
     };
     updateRequestStatus(id, userObject, db);
     setRequestedUsers((users) => users.filter((user) => user.id != id));

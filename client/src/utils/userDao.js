@@ -11,7 +11,7 @@ export const createUser = async (data, db) => {
   };
   tx.onerror = (error) => {
     console.log("Error while create user: ", error);
-    throw new Error("Error while get users: ", error);
+    throw new Error("Error while create user: ", error);
   };
 };
 
@@ -41,7 +41,8 @@ export const getUsers = async (userId, db) => {
         reject(new Error("Error while get users"));
       };
     } catch (err) {
-      reject(err);
+      console.error('err :', err);
+      reject(new Error("Error while get users"));
     }
   });
 };
@@ -69,11 +70,11 @@ export const getRequestedUsers = async (db) => {
       };
       request.onerror = (error) => {
         console.log("error :", error);
-        reject(new Error("Error while get users", error));
+        reject(new Error("Error while get requested users", error));
       };
     } catch (error) {
-      console.error("Error while getting requested Data: ", error);
-      reject(error);
+      console.error("Error while getting requested users: ", error);
+      reject(new Error("Error while getting requested users: ", error));
     }
   });
 };
@@ -101,11 +102,11 @@ export const getConfiremedUsers = async (db) => {
       };
       request.onerror = (error) => {
         console.log("error :", error);
-        reject(new Error("Error while getting Confiremed Users: ", error));
+        reject(new Error("Error while getting confiremed users: ", error));
       };
     } catch (error) {
-      console.error("Error while getting Confiremed Users: ", error);
-      reject(error);
+      console.error("Error while getting confiremed users: ", error);
+      reject(new Error("Error while getting confiremed users: ", error));
     }
   });
 };
@@ -127,7 +128,7 @@ export const updateRequestStatus = async (id, { requested, createdAt }, db) => {
     };
     updateRequest.onerror = (error) => {
       console.log("error :", error);
-      throw new Error("Error while Update User: ", error);
+      throw new Error("Error while update user: ", error);
     };
   };
   request.onerror = (error) => {
@@ -135,3 +136,24 @@ export const updateRequestStatus = async (id, { requested, createdAt }, db) => {
     throw new Error("Error while update operation: ", error);
   };
 };
+
+export const getUserByKey = async (key, db) => {
+  return new Promise((resolve , reject) => {
+    try {
+      const request = db.transaction(userTable)
+                   .objectStore(userTable)
+                   .get(key);
+
+      request.onsuccess = () => {
+        const user = request.result;
+        resolve(user)
+      }
+      request.onerror = (error) => {
+        reject(new Error("Error while getting user: ", error));
+      }
+    } catch (error) {
+      console.error("Error while getting user: ", error);
+      reject(new Error("Error while getting user: ", error));
+    }
+  })
+}

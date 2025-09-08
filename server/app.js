@@ -33,11 +33,27 @@ io.on("connection", (socket) => {
   const userId = socket.handshake.query?.userId;
   if (userId != "undefined") userSocketMap[userId] = socket.id;
 
-  socket.on("create-room", ({ roomId, receiverId, userData }) => {
+  socket.on("create-room", ({ roomId, receiverId, userData }, callback) => {
     const receiverUserId = getReceiverSocketId(receiverId);
     socket
+      .timeout(2000)
       .to(receiverUserId)
-      .emit("request-to-join-room", { roomId, userData });
+      .emit("request-to-join-room", { roomId, userData }, (err, res) => {
+        console.log("Receiver acknowledged:", res);
+        if(err) {
+          callback({status: false})
+        }
+        if (res.length > 0 && res[0].status) {
+          // socket.to(userData.id).emit("create-room-acknowledgement", true)
+          console.log('userData.id true:', userData.id);
+          callback({status: true})
+        } else {
+          console.log('userData.id false:', userData.id);
+          callback({status: false})
+          // socket.to(userData.id).emit("create-room-acknowledgement", {data: false})
+        }
+        
+      });
   });
 
   socket.on("request-accepted", ({ roomId, receiverId, userData }) => {
@@ -46,15 +62,16 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join-room", (roomId) => {
-    socket.join(roomId)
-  })
+    console.log("roomId :", roomId);
+    socket.join(roomId);
+    const clients = io.sockets.adapter.rooms;
+    console.log("clients :", clients);
+  });
 
   socket.on("send-private-message", (data) => {
-    const clients = io.sockets.adapter.rooms;
-    console.log('clients :', clients);
     console.log("private-message", data);
     // socket.join(data.roomId);
-    socket.to(data.receiverId).emit("receive-private-message", data);
+    socket.to(data.roomid).emit("receive-private-message", data);
   });
 
   socket.on("new-user", (data) => {

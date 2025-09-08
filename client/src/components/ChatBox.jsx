@@ -19,7 +19,9 @@ import { useDBContext } from "../context/DBContext";
 import NoUserFallback from "./NoUserFallBack";
 import { useSocketContext } from "../context/SocketContext";
 import { useAuthContext } from "../context/AuthContext";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import notificationSound from "../assets/notification.mp3";
+import { storeMessages } from "../utils/messageDao";
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -44,30 +46,43 @@ function ChatBox() {
   }, [id]);
 
   useEffect(() => {
-    socket.emit("join-room", user.roomId)
-  },[])
+    socket.emit("join-room", user.roomId);
+  }, [user]);
 
   useEffect(() => {
     socket.on("receive-private-message", (data) => {
-      console.log("receive-private-message", data);
-    })
-  }, [])
+      // const sound = new Audio(notificationSound);
+      // console.log('sound =====:', sound);
+			// sound.play();
+      data.timestamp = Date.now()
+      setAllMessages((messages) => [...messages, data]);
+      storeMessages(data, db)
+    });
+  }, []);
+
+  useEffect(() => {
+    if (lastMessageRef.current) {
+      setTimeout(() => {
+			lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
+		}, 100);
+    }
+  }, [allMessages]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message.trim() && authUser.userName && user.id) {
-      console.log("---------------------------------");
       const messageObject = {
-        roomId: user.roomId,
-        text: message,
-        receiverId: user.id,
+        roomid: user.roomId,
+        message,
+        receiverid: user.id,
         id: uuidv4(),
-        senderId: authUser.userId,
-        timestamp: new Date(),
-      }
+        senderid: authUser.userId,
+        timestamp: Date.now(),
+      };
 
       setAllMessages((message) => [...message, messageObject]);
       socket.emit("send-private-message", messageObject);
+      storeMessages(messageObject, db)
     }
     setMessage("");
   };
@@ -92,11 +107,10 @@ function ChatBox() {
       </AppBar>
 
       {/* Chat messages (scrollable middle) */}
-      <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+      <Box sx={{ flex: 1, overflowY: "auto", p: 2 }} ref={lastMessageRef}>
         {allMessages.map((msg) => (
-              <MessageBox key={msg.id} message={msg} />
-            ))}
-        <div ref={lastMessageRef}></div>
+          <MessageBox key={msg.id} message={msg} />
+        ))}
       </Box>
 
       {/* down icon to go back to direct bottom of chat*/}

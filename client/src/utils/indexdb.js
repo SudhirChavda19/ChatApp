@@ -1,41 +1,44 @@
-
 let request;
 let db;
-let version = 1;
+let version = 2;
 
 export const User = {
   id: String,
   name: String,
   email: String,
   phone: Number,
-}
+};
 
 export const ChatModel = {
   id: String,
-  participants: [],
-  lastMessage: String,
-  timeStamp: Number
+  timestamp: Number,
+  roomid: String,
+  message: String,
+  receiverid: String,
+  senderid: String, 
 };
 
 export const Stores = {
-  Users : 'users',
-  Messages: 'messages'
-}
+  Users: "users",
+  Messages: "messages",
+};
 
 export const initDB = async () => {
   return new Promise((resolve) => {
     // open the connection
-    request = indexedDB.open('myDB');
+    request = indexedDB.open("myDB", version);
 
     request.onupgradeneeded = () => {
       db = request.result;
 
       // if the data object store doesn't exist, create it
       if (!db.objectStoreNames.contains(Stores.Users)) {
-        db.createObjectStore(Stores.Users, { keyPath: 'id' });
+        db.createObjectStore(Stores.Users, { keyPath: "id" });
       }
+      console.log('db.objectStoreNames :', db.objectStoreNames);
       if (!db.objectStoreNames.contains(Stores.Messages)) {
-        db.createObjectStore(Stores.Messages, { keyPath: 'id' });
+        const store = db.createObjectStore(Stores.Messages, { keyPath: "id" });
+        store.createIndex("timestamp", "timestamp");
       }
       // no need to resolve here
     };
@@ -43,7 +46,7 @@ export const initDB = async () => {
     request.onsuccess = () => {
       db = request.result;
       version = db.version;
-      console.log('request.onsuccess - initDB', version);
+      console.log("request.onsuccess - initDB", version);
       resolve(db);
     };
 

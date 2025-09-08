@@ -6,51 +6,72 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle
+  DialogTitle,
 } from "@mui/material";
-import { v4 as uuidv4 } from 'uuid';
-import { createUser, getUsers } from "../utils/userDao";
+import { v4 as uuidv4 } from "uuid";
+import { getUserByKey } from "../utils/userDao";
 import { useDBContext } from "../context/DBContext";
 import { useSocketContext } from "../context/SocketContext";
 
-function JoinRoomDialog({open, onClose}) {
-  const [room, setRoom] = useState(null);
+function JoinRoomDialog({ open, onClose }) {
+  const [inputUserId, setInputUserId] = useState("");
+  // const [error, setError] = useState(false);
+  const [errorText, setErrorText] = useState("");
   const uniqueId = uuidv4();
   const db = useDBContext();
   const socket = useSocketContext();
 
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
-  
+
   const handleClose = () => {
+    setInputUserId("");
+    setErrorText("");
     onClose();
   };
+
+  const handleOnChange = (e) => {
+    setInputUserId(e.target.value);
+    setErrorText("");
+  };
   // Start with created room on monday with refrence of chatgpt
-  function createRoom (otherUserId) {
+  function createRoom(otherUserId) {
     const roomId = [userId, otherUserId].sort().join("_");
-    console.log('roomId :', roomId);
-    setRoom(roomId);
-    socket.emit("create-room", {roomId, receiverId: otherUserId, userData: { id: userId, name: userName} });
+    console.log("roomId :", roomId);
+    socket
+      .timeout(2000)
+      .emit(
+        "create-room",
+        {
+          roomId,
+          receiverId: otherUserId,
+          userData: { id: userId, name: userName },
+        },
+        (err, res) => {
+          console.log("response:  ", res);
+          if(!res.status){
+            setErrorText("Invalid User ID or User Not Connected");
+          } else {
+            handleClose()
+          }
+        }
+      );
+
   }
 
-  // function AddUser () {
-  //   const userData = {
-  //     // id: uniqueId,
-  //     name: userName,
-  //     createdAt: new Date()
-  //   }
-  //   createUser(userData, db);
-  // }
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     let formJson = Object.fromEntries(formData.entries());
-    // formJson.id = uniqueId;
-    // formJson.createdAt = new Date();
-    createRoom(formJson.userId);
-    console.log('formJson :', formJson);
-    handleClose();
+    const user = await getUserByKey(formJson.userId.trim(), db);
+    console.log("user :", user);
+    if (user) {
+      setErrorText("User Already Exist");
+    } else {
+      createRoom(formJson.userId.trim());
+      console.log("Else---------------");
+    }
+    console.log("formJson :", formJson);
   };
 
   return (
@@ -64,6 +85,8 @@ function JoinRoomDialog({open, onClose}) {
           <TextField
             autoFocus
             required
+            value={inputUserId}
+            onChange={handleOnChange}
             margin="dense"
             id="userId"
             name="userId"
@@ -71,6 +94,8 @@ function JoinRoomDialog({open, onClose}) {
             type="text"
             fullWidth
             variant="standard"
+            error={!!errorText}
+            helperText={errorText}
           />
         </form>
       </DialogContent>
