@@ -17,11 +17,13 @@ import {
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useAuthContext } from "../context/AuthContext";
 
-function MessageBox({message}) {
+function MessageBox({ message, ref, handleScroll }) {
   const { authUser } = useAuthContext();
-  const { userId } = authUser
+  const { userId } = authUser;
   return (
     <Box
+      ref={ref}
+      onScroll={handleScroll}
       sx={{
         display: "flex",
         justifyContent: message.senderid === userId ? "flex-end" : "flex-start",
@@ -57,7 +59,12 @@ function MessageBox({message}) {
           variant="caption"
           gutterBottom
           align={message.senderid === userId ? "right" : "left"}
-          sx={{ display: "block", margin: "0px", lineHeight: 1, fontSize: "9px" }}
+          sx={{
+            display: "block",
+            margin: "0px",
+            lineHeight: 1,
+            fontSize: "9px",
+          }}
         >
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: "numeric",

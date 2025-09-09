@@ -5,7 +5,7 @@ import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import { motion } from "framer-motion"; // for animation
 import JoinRoomDialog from "./JoinRoomDialog";
 import { useAuthContext } from "../context/AuthContext";
-import { getConfiremedUsers } from "../utils/userDao";
+import { getConfiremedUsers } from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
 
 

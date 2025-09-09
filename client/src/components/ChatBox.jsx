@@ -8,27 +8,30 @@ import {
   Box,
   InputBase,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import SendIcon from "@mui/icons-material/Send";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
 import PropTypes from "prop-types";
 import MessageBox from "./MessageBox";
-import { getUsers } from "../utils/userDao";
 import { useDBContext } from "../context/DBContext";
 import NoUserFallback from "./NoUserFallBack";
 import { useSocketContext } from "../context/SocketContext";
 import { useAuthContext } from "../context/AuthContext";
 import { v4 as uuidv4 } from "uuid";
 import notificationSound from "../assets/notification.mp3";
-import { storeMessages } from "../utils/messageDao";
+import { getRoomMessages, storeMessages } from "../services/messageDao";
 
 function ChatBox() {
   const [user, setUser] = useState({});
   const [message, setMessage] = useState("");
   const [allMessages, setAllMessages] = useState([]);
+  const [initialized, setInitialized] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
 
   const lastMessageRef = useRef(null);
+  const chatRef = useRef(null);
   const socket = useSocketContext();
   const db = useDBContext();
   const { id } = useParams();
@@ -46,6 +49,14 @@ function ChatBox() {
   }, [id]);
 
   useEffect(() => {
+    (async () => {
+      const messageForRoom = await getRoomMessages(user.roomId, db);
+      if (messageForRoom && messageForRoom.length > 0)
+        setAllMessages(messageForRoom);
+    })();
+  }, [allMessages, db, user]);
+
+  useEffect(() => {
     socket.emit("join-room", user.roomId);
   }, [user]);
 
@@ -53,20 +64,21 @@ function ChatBox() {
     socket.on("receive-private-message", (data) => {
       // const sound = new Audio(notificationSound);
       // console.log('sound =====:', sound);
-			// sound.play();
-      data.timestamp = Date.now()
+      // sound.play();
+      data.timestamp = Date.now();
       setAllMessages((messages) => [...messages, data]);
-      storeMessages(data, db)
+      storeMessages(data, db);
     });
   }, []);
 
   useEffect(() => {
-    if (lastMessageRef.current) {
+    if (!initialized && lastMessageRef.current) {
       setTimeout(() => {
-			lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
-		}, 100);
+        lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+        setInitialized(true);
+      }, 100);
     }
-  }, [allMessages]);
+  }, [initialized, allMessages]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -82,9 +94,31 @@ function ChatBox() {
 
       setAllMessages((message) => [...message, messageObject]);
       socket.emit("send-private-message", messageObject);
-      storeMessages(messageObject, db)
+      storeMessages(messageObject, db);
     }
     setMessage("");
+  };
+
+  const handleScroll = async () => {
+    if (chatRef.current && chatRef.current.scrollTop === 0) {
+      console.log("scroll ------------");
+      setIsLoadingOlder(true);
+
+      // Load older messages
+      const oldest = allMessages[0];
+      setTimeout(async () => {
+        const olderMessages = await getRoomMessages(
+          user.roomId,
+          db,
+          oldest.timestamp
+        );
+        console.log("olderMessages :", olderMessages);
+        if (olderMessages && olderMessages.length > 0) {
+          setAllMessages((prev) => [...olderMessages, ...prev]);
+        }
+        setIsLoadingOlder(false);
+      }, 1000);
+    }
   };
 
   return (
@@ -107,9 +141,29 @@ function ChatBox() {
       </AppBar>
 
       {/* Chat messages (scrollable middle) */}
-      <Box sx={{ flex: 1, overflowY: "auto", p: 2 }} ref={lastMessageRef}>
-        {allMessages.map((msg) => (
-          <MessageBox key={msg.id} message={msg} />
+      <Box
+        ref={chatRef}
+        sx={{ flex: 1, overflowY: "auto", p: 2 }}
+        onScroll={handleScroll}
+      >
+        {isLoadingOlder && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 1,
+            }}
+          >
+            <CircularProgress size={24} />
+          </Box>
+        )}
+        {allMessages.map((msg, i) => (
+          <MessageBox
+            message={msg}
+            key={msg.id}
+            ref={i === allMessages.length - 1 ? lastMessageRef : null}
+          />
         ))}
       </Box>
 

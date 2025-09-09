@@ -40,26 +40,45 @@ io.on("connection", (socket) => {
       .to(receiverUserId)
       .emit("request-to-join-room", { roomId, userData }, (err, res) => {
         console.log("Receiver acknowledged:", res);
-        if(err) {
-          callback({status: false})
+        if (err) {
+          callback({ status: false });
         }
         if (res.length > 0 && res[0].status) {
-          // socket.to(userData.id).emit("create-room-acknowledgement", true)
-          console.log('userData.id true:', userData.id);
-          callback({status: true})
+          callback({ status: true });
         } else {
-          console.log('userData.id false:', userData.id);
-          callback({status: false})
-          // socket.to(userData.id).emit("create-room-acknowledgement", {data: false})
+          callback({ status: false });
         }
-        
       });
   });
 
-  socket.on("request-accepted", ({ roomId, receiverId, userData }) => {
-    const receiverUserId = getReceiverSocketId(receiverId);
-    socket.to(receiverUserId).emit("request-accepted", { roomId, userData });
-  });
+  socket.on(
+    "request-accepted",
+    ({ roomId, receiverId, userData }, callback) => {
+      const receiverUserId = getReceiverSocketId(receiverId);
+      socket
+        .timeout(2000)
+        .to(receiverUserId)
+        .emit("request-accepted", { roomId, userData }, (err, res) => {
+          console.log("Receiver acknowledged: ===========> ", res);
+          if (err) {
+            callback({ status: false });
+          }
+          if (res.length > 0 && res[0].status) {
+            console.log("userData.id true:", userData.id);
+            callback({ status: true });
+          } else {
+            console.log("userData.id false:", userData.id);
+            callback({ status: false });
+          }
+        });
+    }
+  );
+
+  socket.on("online-user-status", (data) => {
+    
+    socket.to().emit("get-online-users", Object.keys(userSocketMap));
+  })
+
 
   socket.on("join-room", (roomId) => {
     console.log("roomId :", roomId);

@@ -7,7 +7,7 @@ import useScrollTrigger from "@mui/material/useScrollTrigger";
 import PropTypes from "prop-types";
 import SideBar from "./SideBar";
 import ChatBox from "./ChatBox";
-import { getConfiremedUsers, getUsers } from "../utils/userDao";
+import { getConfiremedUsers, getUsers } from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
 import NoUserFallback from "./NoUserFallBack";
 import { useSocketContext } from "../context/SocketContext";

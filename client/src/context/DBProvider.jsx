@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { initDB } from "../utils/indexdb";
+import { initDB } from "../services/indexdb";
 import { Box, LinearProgress } from "@mui/material";
 import { DBContext } from "./DBContext";
 

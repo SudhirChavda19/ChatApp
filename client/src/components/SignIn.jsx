@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Container, TextField, Typography, Card } from "@mui/material";
 import { v4 as uuidv4 } from 'uuid';
-import { createUser } from "../utils/userDao";
+import { createUser } from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
 import { useAuthContext } from "../context/AuthContext";
 

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
-import { getUserByKey } from "../utils/userDao";
+import { getUserByKey } from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
 import { useSocketContext } from "../context/SocketContext";
 

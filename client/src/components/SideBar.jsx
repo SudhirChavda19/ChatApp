@@ -41,11 +41,12 @@ import {
   getConfiremedUsers,
   getRequestedUsers,
   updateRequestStatus,
-} from "../utils/userDao";
+} from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
 import JoinRoomDialog from "./JoinRoomDialog";
 import { useSocketContext } from "../context/SocketContext";
 import ListUser from "./ListUser";
+import SnackBar from "../utils/SnackBar";
 
 function SideBar({ getAvailableUsers }) {
   const [requestedUsers, setRequestedUsers] = useState([]);
@@ -53,6 +54,7 @@ function SideBar({ getAvailableUsers }) {
   const [openDialog, setOpenDialog] = useState(false);
   const [openTooltip, setOpenTooltip] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
+  const [openSnackBar, setOpenSnackBar] = useState(false);
   // const [loading, setLoading] = useState(true);
 
   const socket = useSocketContext();
@@ -61,6 +63,11 @@ function SideBar({ getAvailableUsers }) {
 
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
+
+  useEffect(() => {
+    const confiremedUsersId = confiremedUsers.map((user) => user.id)
+    socket.emit("online-user-status", confiremedUsersId)
+  }, [confiremedUsers])
 
   useEffect(() => {
     (async () => {
@@ -85,23 +92,26 @@ function SideBar({ getAvailableUsers }) {
   }, [db]);
 
   useEffect(() => {
-    socket.on("request-to-join-room", async ({ roomId, userData }, callback) => {
-      console.log("request-to-join-room:", { roomId, userData });
-      const userObject = {
-        id: userData.id,
-        name: userData.name,
-        roomId,
-        requested: true,
-        createdAt: Date.now(),
-      };
-      setRequestedUsers((users) => [...users, userObject]);
-      await createUser(userObject, db);
-      callback({ status: true});
-    });
+    socket.on(
+      "request-to-join-room",
+      async ({ roomId, userData }, callback) => {
+        console.log("request-to-join-room:", { roomId, userData });
+        const userObject = {
+          id: userData.id,
+          name: userData.name,
+          roomId,
+          requested: true,
+          createdAt: Date.now(),
+        };
+        setRequestedUsers((users) => [...users, userObject]);
+        await createUser(userObject, db);
+        callback({ status: true });
+      }
+    );
   }, []);
 
   useEffect(() => {
-    socket.on("request-accepted", ({ roomId, userData }) => {
+    socket.on("request-accepted", ({ roomId, userData }, callback) => {
       console.log("receive-user-data-after-room-joined", { roomId, userData });
       const userObject = {
         id: userData.id,
@@ -114,6 +124,7 @@ function SideBar({ getAvailableUsers }) {
       const updatedUser = [...confiremedUsers, userObject];
       getAvailableUsers(updatedUser.length);
       createUser(userObject, db);
+      callback({ status: true });
     });
   }, []);
 
@@ -146,11 +157,25 @@ function SideBar({ getAvailableUsers }) {
 
   const handleAcceptRequest = async ({ roomId, id, name }) => {
     const sendUserData = { id: userId, name: userName };
-    socket.emit("request-accepted", {
-      roomId,
-      receiverId: id,
-      userData: sendUserData,
-    });
+    socket.timeout(2000).emit(
+      "request-accepted",
+      {
+        roomId,
+        receiverId: id,
+        userData: sendUserData,
+      },
+      (err, res) => {
+        console.log("response:  ", res);
+        if (res && !res?.status) {
+          setOpenSnackBar(true);
+        } else {
+          onRequestAccept(roomId, id, name);
+        }
+      }
+    );
+  };
+
+  const onRequestAccept = async (roomId, id, name) => {
     const userObject = {
       id,
       name,
@@ -163,6 +188,12 @@ function SideBar({ getAvailableUsers }) {
     setConfiremedUsers((users) => [...users, userObject]);
     const updatedUser = [...confiremedUsers, userObject];
     await getAvailableUsers(updatedUser.length);
+  };
+
+  const handleSnackBar = (snackBarStatus) => {
+    if (!snackBarStatus) {
+      setOpenSnackBar(false);
+    }
   };
 
   // const handleRejectRequest = () => {
@@ -256,13 +287,11 @@ function SideBar({ getAvailableUsers }) {
                   width: "100%",
                   maxWidth: 360,
                   bgcolor: "background.paper",
-                  padding: "0px"
+                  padding: "0px",
                 }}
               >
                 {confiremedUsers?.map((user) => {
-
-                   return <ListUser key={user.id} userData={user} />;
-
+                  return <ListUser key={user.id} userData={user} />;
                 })}
               </List>
             </ListItem>
@@ -288,6 +317,14 @@ function SideBar({ getAvailableUsers }) {
                   />
                 );
               })}
+              <SnackBar
+                setHorizontal={"center"}
+                setVertical={"top"}
+                setOpen={openSnackBar}
+                setMessage={"User Not Connected"}
+                setSeverity={"error"}
+                handleSnackBar={handleSnackBar}
+              />
             </List>
           </ListItem>
         ) : (
