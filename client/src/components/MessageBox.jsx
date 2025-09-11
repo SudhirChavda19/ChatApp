@@ -17,12 +17,11 @@ import {
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useAuthContext } from "../context/AuthContext";
 
-function MessageBox({ message, ref, handleScroll }) {
+function MessageBox({ message, handleScroll }) {
   const { authUser } = useAuthContext();
   const { userId } = authUser;
   return (
     <Box
-      ref={ref}
       onScroll={handleScroll}
       sx={{
         display: "flex",
@@ -35,7 +34,7 @@ function MessageBox({ message, ref, handleScroll }) {
         sx={{
           padding: "8px",
           maxWidth: "60%",
-          bgcolor: message.senderid === userId ? "primary.main" : "grey.300",
+          bgcolor: message.senderid === userId ? "primary.main" : "white",
           color: message.senderid === userId ? "white" : "black",
           borderRadius: 3,
           borderTopRightRadius: message.senderid === userId ? 0 : 12,
@@ -45,6 +44,7 @@ function MessageBox({ message, ref, handleScroll }) {
         <Typography
           variant="h6"
           gutterBottom
+          align={message.senderid === userId ? "left" : "right"}
           sx={{
             display: "block",
             marginBottom: "4px",

@@ -16,18 +16,29 @@ import {
   Skeleton,
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
-
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import { useSocketContext } from "../context/SocketContext";
+import UserAvatar from "../utils/UserAvatar";
 
 function ListUser({ userData, handleAcceptRequest }) {
-  const navigate = useNavigate();
   const [user, setUser] = useState({});
+  const navigate = useNavigate();
+  const socket = useSocketContext();
 
   useEffect(() => {
     setUser(userData);
   }, [userData]);
 
+  useEffect(() => {
+    socket.on("presence-update", ({ userId, status }) => {
+      if (user.id === userId) {
+        setUser({ ...user, online: status });
+      }
+    });
+  }, [socket, user]);
+
   const handleOpenUserChat = () => {
-    console.log("handleOpenUserChat :", user.id);
+    // console.log("handleOpenUserChat :", user);
     navigate(`/chat/user/${user.id}`, { state: { user } });
   };
 
@@ -35,14 +46,14 @@ function ListUser({ userData, handleAcceptRequest }) {
     handleAcceptRequest(user);
   };
 
-//   if (!user)
-//     return (
-        
-//       <ListItem>
-//         <p>465645656546565</p>
-//         <Skeleton />
-//       </ListItem>
-//     );
+  //   if (!user)
+  //     return (
+
+  //       <ListItem>
+  //         <p>465645656546565</p>
+  //         <Skeleton />
+  //       </ListItem>
+  //     );
 
   return user.requested ? (
     <ListItem
@@ -50,14 +61,11 @@ function ListUser({ userData, handleAcceptRequest }) {
         backgroundColor: "#f3f3f3",
         borderRadius: "12px",
         padding: "8px",
-        margin: "8px 0px"
+        margin: "8px 0px",
       }}
     >
-      <ListItemAvatar>
-        <Avatar
-          alt={`Avatar n°${user.name}`}
-          src={`/static/images/avatar/${user.name}.jpg`}
-        />
+      <ListItemAvatar sx={{minWidth: "40px", height: "30px"}}>
+        <UserAvatar name={user.name} size={"30px"}/>
       </ListItemAvatar>
       <ListItemText
         id={`checkbox-list-secondary-label-${user.id}`}
@@ -93,16 +101,21 @@ function ListUser({ userData, handleAcceptRequest }) {
         }}
         onClick={handleOpenUserChat}
       >
-        <ListItemAvatar>
-          <Avatar
-            alt={`Avatar n°${user.name}`}
-            src={`/static/images/avatar/${user.name}.jpg`}
+        <ListItemAvatar sx={{position: "relative", minWidth: "40px", height: "30px"}}>
+         <UserAvatar name={user.name} size={"30px"}/>
+         <FiberManualRecordIcon
+            sx={{ position: "absolute", width: "0.8rem", left: 17, top: 18}}
+            color={user.online ? "success" : "warning"}
+            fontSize="6px"
           />
         </ListItemAvatar>
         <ListItemText
           id={`checkbox-list-secondary-label-${user.id}`}
           primary={`${user.name}`}
         />
+        {/* <ListItemIcon sx={{ justifyContent: "flex-end" }}>
+          
+        </ListItemIcon> */}
       </ListItemButton>
     </ListItem>
   );

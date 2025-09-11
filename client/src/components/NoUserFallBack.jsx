@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
-import { motion } from "framer-motion"; // for animation
+import { motion } from "framer-motion";
 import JoinRoomDialog from "./JoinRoomDialog";
 import { useAuthContext } from "../context/AuthContext";
 import { getConfiremedUsers } from "../services/userDao";
@@ -60,7 +60,7 @@ console.log('isUsersAvailable :', isUsersAvailable);
       </motion.div>
 
       <Typography variant="h5" sx={{ mt: 3, fontWeight: "bold" }}>
-        {confiremedUsers.length > 0 ? `Hiiiiiiiiiiiii 👋 ${authUser.userName} ❄` : "No conversations yet"}
+        {confiremedUsers.length > 0 ? `Hiii 👋 ${authUser.userName} ❄` : "No conversations yet"}
       </Typography>
       <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
         {confiremedUsers.length > 0

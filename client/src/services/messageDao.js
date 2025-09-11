@@ -6,11 +6,10 @@ export const storeMessages = async (data, db) => {
 
   store.add(data);
 
-  tx.oncomplete = (res) => {
-    console.log("Message Stored: ", res);
+  tx.oncomplete = () => {
   };
   tx.onerror = (error) => {
-    console.log("Error while store message: ", error);
+    // console.log("Error while store message: ", error);
     throw new Error("Error while store message: ", error);
   };
 };
@@ -26,7 +25,7 @@ export const getRoomMessages = async (roomid, db, beforeTimestamp) => {
 
       const messages = [];
       let count = 0;
-      const limit = 10;
+      const limit = 20;
       request.onsuccess = () => {
         const cursor = request.result;
         if (cursor && count < limit) {

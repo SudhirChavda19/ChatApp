@@ -65,11 +65,6 @@ function SideBar({ getAvailableUsers }) {
   const userName = localStorage.getItem("userName");
 
   useEffect(() => {
-    const confiremedUsersId = confiremedUsers.map((user) => user.id)
-    socket.emit("online-user-status", confiremedUsersId)
-  }, [confiremedUsers])
-
-  useEffect(() => {
     (async () => {
       try {
         const [requestedUsersData, confiremedUsersData] = await Promise.all([
@@ -80,13 +75,31 @@ function SideBar({ getAvailableUsers }) {
         console.log("confiremedUsers :", confiremedUsersData);
         if (requestedUsersData.length > 0)
           setRequestedUsers(requestedUsersData);
-        if (confiremedUsersData.length > 0)
-          setConfiremedUsers(confiremedUsersData);
+
+        const confiremedUsersId = confiremedUsersData.map((user) => user.id);
+        if (confiremedUsersId.length > 0) {
+          socket
+            .timeout(2000)
+            .emit("online-user", confiremedUsersId, (error, res) => {
+              console.log("response: =========", res);
+              if (res.length > 0) {
+                setConfiremedUsers(
+                  confiremedUsersData.map((user) => {
+                    if (res.includes(user.id)) {
+                      return { ...user, online: true };
+                    } else {
+                      return { ...user, online: false };
+                    }
+                  })
+                );
+              } else {
+                setConfiremedUsers(confiremedUsersData);
+              }
+            });
+        }
         getAvailableUsers(confiremedUsers?.length || 0);
-        // setLoading(false);
       } catch (error) {
         console.error("Error fetching users:", error);
-        // setLoading(false);
       }
     })();
   }, [db]);
@@ -95,7 +108,6 @@ function SideBar({ getAvailableUsers }) {
     socket.on(
       "request-to-join-room",
       async ({ roomId, userData }, callback) => {
-        console.log("request-to-join-room:", { roomId, userData });
         const userObject = {
           id: userData.id,
           name: userData.name,
@@ -112,7 +124,6 @@ function SideBar({ getAvailableUsers }) {
 
   useEffect(() => {
     socket.on("request-accepted", ({ roomId, userData }, callback) => {
-      console.log("receive-user-data-after-room-joined", { roomId, userData });
       const userObject = {
         id: userData.id,
         name: userData.name,
@@ -127,8 +138,6 @@ function SideBar({ getAvailableUsers }) {
       callback({ status: true });
     });
   }, []);
-
-  // console.log("User: ", users);
 
   const handleClickOpen = () => {
     setOpenDialog(true);
@@ -151,7 +160,6 @@ function SideBar({ getAvailableUsers }) {
   };
 
   const handleTabChange = (event, newValue) => {
-    console.log("requestedUsers", requestedUsers);
     setTabvalue(newValue);
   };
 
@@ -165,7 +173,6 @@ function SideBar({ getAvailableUsers }) {
         userData: sendUserData,
       },
       (err, res) => {
-        console.log("response:  ", res);
         if (res && !res?.status) {
           setOpenSnackBar(true);
         } else {

@@ -20,18 +20,31 @@ app.get("/", (req, res) => {
 });
 
 let users = [];
-const userSocketMap = {};
+const userSocketMap = new Map();
+const watchMap = new Map();
 
 const getReceiverSocketId = (receiverId) => {
-  return userSocketMap[receiverId];
+  return userSocketMap.get(receiverId);
 };
+
+const notifyPresenceChange = (userId, status) => {
+  for (const [socketId, watchList] of watchMap.entries()) {
+    console.log('status :', status);
+    if (watchList.includes(userId)) {
+    console.log('userId :', userId);
+      io.to(socketId).emit("presence-update", { userId, status });
+    }
+  }
+}
 
 io.on("connection", (socket) => {
   console.log("User Connected: ", socket.id);
   console.log("UserID::::::::: ", socket.handshake.query.userId);
 
   const userId = socket.handshake.query?.userId;
-  if (userId != "undefined") userSocketMap[userId] = socket.id;
+  if (userId != "undefined") userSocketMap.set(userId, socket.id);
+
+  notifyPresenceChange(userId, true);
 
   socket.on("create-room", ({ roomId, receiverId, userData }, callback) => {
     const receiverUserId = getReceiverSocketId(receiverId);
@@ -64,32 +77,29 @@ io.on("connection", (socket) => {
             callback({ status: false });
           }
           if (res.length > 0 && res[0].status) {
-            console.log("userData.id true:", userData.id);
             callback({ status: true });
           } else {
-            console.log("userData.id false:", userData.id);
             callback({ status: false });
           }
         });
     }
   );
 
-  socket.on("online-user-status", (data) => {
-    
-    socket.to().emit("get-online-users", Object.keys(userSocketMap));
+  socket.on("online-user", (confiremedUsersId, callback) => {
+    watchMap.set(socket.id, confiremedUsersId);
+    const dataSet = new Set(confiremedUsersId)
+    const onlineUsers = Array.from(dataSet).filter((user) => userSocketMap.has(user)).map((user) => user);
+    console.log('onlineUsers :', onlineUsers);
+    callback(onlineUsers)
   })
 
 
   socket.on("join-room", (roomId) => {
-    console.log("roomId :", roomId);
     socket.join(roomId);
     const clients = io.sockets.adapter.rooms;
-    console.log("clients :", clients);
   });
 
   socket.on("send-private-message", (data) => {
-    console.log("private-message", data);
-    // socket.join(data.roomId);
     socket.to(data.roomid).emit("receive-private-message", data);
   });
 
@@ -103,11 +113,9 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("User Disconnected: ", socket.id);
-    delete userSocketMap[userId];
-    // users = users.filter((user) => user.socketID !== socket.id);
-    // console.log(users);
-    //Sends the list of users to the client
-    // io.emit("new-user-response", users);
+    userSocketMap.delete(userId);
+    watchMap.delete(socket.id);
+    notifyPresenceChange(userId, false);
     socket.disconnect();
   });
 });
