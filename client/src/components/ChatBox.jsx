@@ -10,6 +10,8 @@ import {
   IconButton,
   Button,
   CircularProgress,
+  ClickAwayListener,
+  Paper,
 } from "@mui/material";
 import Picker from "emoji-picker-react";
 import { motion } from "framer-motion";
@@ -18,6 +20,8 @@ import MoodIcon from "@mui/icons-material/Mood";
 import SendIcon from "@mui/icons-material/Send";
 import WavingHandIcon from "@mui/icons-material/WavingHand";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import GifBoxOutlinedIcon from "@mui/icons-material/GifBoxOutlined";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
 import PropTypes from "prop-types";
 import MessageBox from "./MessageBox";
@@ -29,6 +33,7 @@ import { v4 as uuidv4 } from "uuid";
 import notificationSound from "../assets/notification.mp3";
 import { getRoomMessages, storeMessages } from "../services/messageDao";
 import UserAvatar from "../utils/UserAvatar";
+import GIFPicker from "../utils/GIFPicker";
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -36,6 +41,8 @@ function ChatBox() {
   const [allMessages, setAllMessages] = useState([]);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
+  const [openGifPicker, setOpenGifPicker] = useState(false);
+  const [gifUrl, setgifUrl] = useState(null);
   const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
@@ -59,20 +66,22 @@ function ChatBox() {
     } else if (location.state.user) {
       setUser(location.state.user);
     }
-  }, [id]);
+  }, [id, location.state, navigate]);
 
   useEffect(() => {
     (async () => {
       const messageForRoom = await getRoomMessages(user.roomId, db);
-      if (messageForRoom && messageForRoom.length > 0)
+      console.log('messageForRoom -------------:', messageForRoom);
+      if (messageForRoom && messageForRoom.length > 0) {
         setAllMessages(messageForRoom);
-      initializedRef.current = true;
+        initializedRef.current = true;
+      }
     })();
-  }, [db, user]);
+  }, [db, user, id]);
 
   useEffect(() => {
     socket.emit("join-room", user.roomId);
-  }, [user]);
+  }, [user, id, socket]);
 
   useEffect(() => {
     socket.on("receive-private-message", async (data) => {
@@ -106,18 +115,21 @@ function ChatBox() {
   }, [socket, user]);
 
   useEffect(() => {
-    setTimeout(() => {
-      lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-      initializedRef.current = false;
-    }, 300);
-  }, [initializedRef]);
+    if (initializedRef.current) {
+      setTimeout(() => {
+        lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+        initializedRef.current = false;
+      }, 250);
+    }
+  }, [initializedRef, id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (message.trim() && authUser.userName && user.id) {
+    if ((message.trim() || gifUrl) && authUser.userName && user.id) {
       const messageObject = {
         roomid: user.roomId,
-        message,
+        message: message.trim() ? message : "",
+        gifurl: gifUrl ? gifUrl : "",
         receiverid: user.id,
         id: uniqueId,
         senderid: authUser.userId,
@@ -130,6 +142,7 @@ function ChatBox() {
       lastMessageRef.current?.scrollIntoView({ behavior: "auto" });
     }
     setMessage("");
+    setgifUrl(null);
   };
 
   const handleScroll = async () => {
@@ -138,23 +151,21 @@ function ChatBox() {
 
     if (scrollDebounceRef.current)
       window.clearTimeout(scrollDebounceRef.current);
+    const distanceFromTop = cr.scrollTop;
+    const distanceFromBottom = cr.scrollHeight - cr.clientHeight - cr.scrollTop;
+
+    // update near bottom flag (used to decide auto-scroll on new message)
+    isNearBottomRef.current = distanceFromBottom < 100;
+
+    // if user has scrolled away from bottom, show a small "new messages" indicator later
+    if (!isNearBottomRef.current) {
+      setShowNewMsgButton(true);
+    } else {
+      setShowNewMsgButton(false);
+    }
     scrollDebounceRef.current = window.setTimeout(() => {
-      const distanceFromTop = cr.scrollTop;
-      const distanceFromBottom =
-        cr.scrollHeight - cr.clientHeight - cr.scrollTop;
-
-      // update near bottom flag (used to decide auto-scroll on new message)
-      isNearBottomRef.current = distanceFromBottom < 150;
-
-      // if user has scrolled away from bottom, show a small "new messages" indicator later
-      if (!isNearBottomRef.current) {
-        setShowNewMsgButton(true);
-      } else {
-        setShowNewMsgButton(false);
-      }
-
       // load older when scrolled near top
-      if (distanceFromTop <= 60 && !isLoadingOlder && hasMore) {
+      if (distanceFromTop <= 10 && !isLoadingOlder && hasMore) {
         loadOlderMessages();
       }
     }, 500);
@@ -208,18 +219,31 @@ function ChatBox() {
 
   const handleEmojiClick = () => {
     setOpenEmojiPicker(openEmojiPicker ? false : true);
+    setOpenGifPicker(false);
   };
 
   const onEmojiClick = (emojiObject) => {
-    console.log("emojiObject 1:", emojiObject);
     setMessage((prevInput) => prevInput + emojiObject.emoji);
+  };
+  const handleGifClick = () => {
+    setOpenEmojiPicker(false);
+    setOpenGifPicker(openGifPicker ? false : true);
+  };
+
+  const OnGifClick = ({ preview }) => {
+    console.log("gifData------ :", preview);
+    setgifUrl(preview.url);
+  };
+
+  const handleOnCloseGif = () => {
+    setgifUrl(null);
   };
 
   return (
     <Box
       sx={{
         position: "relative",
-        height: "84vh",
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         flex: 1,
@@ -228,7 +252,7 @@ function ChatBox() {
       {/* Header */}
       <AppBar position="static">
         <Toolbar>
-          <UserAvatar name={user.name} size={"40px"}/>
+          <UserAvatar name={user.name} size={"40px"} />
           <Box>
             <Typography variant="h6" sx={{ ml: 1, lineHeight: 1 }}>
               {user.name}
@@ -243,7 +267,16 @@ function ChatBox() {
       {/* Chat messages (scrollable middle) */}
       <Box
         ref={chatRef}
-        sx={{ flex: 1, overflowY: "auto", p: 2 }}
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          p: 2,
+          "&::-webkit-scrollbar": {
+            display: "none",
+          },
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
         onScroll={handleScroll}
       >
         {isLoadingOlder && (
@@ -259,8 +292,11 @@ function ChatBox() {
           </Box>
         )}
         {allMessages && allMessages.length > 0 ? (
-          allMessages.map((msg) => (
-            <div key={msg.id} ref={lastMessageRef}>
+          allMessages.map((msg, i) => (
+            <div
+              key={msg.id}
+              ref={i === allMessages.length - 1 ? lastMessageRef : null}
+            >
               <MessageBox message={msg} />
             </div>
           ))
@@ -306,9 +342,9 @@ function ChatBox() {
       <form onSubmit={handleSubmit}>
         <Box
           sx={{
+            position: "relative",
             display: "flex",
-            // flexBasis: ""
-            alignItems: "center",
+            alignItems: "flex-end",
             borderTop: "1px solid #ddd",
             p: 1,
           }}
@@ -322,88 +358,174 @@ function ChatBox() {
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
+                flexDirection: "column",
                 backgroundColor: "#f3f3f3",
                 borderRadius: "24px",
-                paddingRight: 1,
+                // paddingRight: 1,
+                alignItems: "flex-start",
               }}
             >
-              <InputBase
-                sx={{
-                  width: "80%",
-                  height: "46px",
-                  flex: 1,
-                  ml: 1,
-                  input: {
-                    ml: 2,
-                    mr: 2,
-                  },
-                }}
-                placeholder="Type a message..."
-                inputProps={{ "aria-label": "type a message" }}
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-              <IconButton
-                type="button"
-                aria-label="emoji"
-                sx={{ ml: 2 }}
-                onClick={handleEmojiClick}
-              >
-                <MoodIcon color="primary" />
-              </IconButton>
-            </Box>
-            {/* <Picker open={openEmojiPicker} onEmojiClick={onEmojiClick} /> */}
-            {openEmojiPicker && (
+              {gifUrl && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    ml: 3,
+                    mt: 1,
+                    mb: 1,
+                    position: "relative",
+                    maxHeight: "fit-content",
+                    height: "fit-content",
+                    borderRadius: 3,
+                  }}
+                >
+                  <IconButton
+                    type="button"
+                    aria-label="closeGif"
+                    sx={{
+                      position: "absolute",
+                      right: "1%",
+                      top: "1%",
+                      padding: "4px",
+                    }}
+                    onClick={handleOnCloseGif}
+                  >
+                    <CloseOutlinedIcon fontSize={"small"} color="action" />
+                  </IconButton>
+                  <img
+                    src={gifUrl}
+                    alt="GIF"
+                    width={160}
+                    // maxHeight={200}
+                    style={{ borderRadius: "10px", display: "block" }}
+                  />
+                </Paper>
+              )}
               <Box
                 sx={{
-                  position: "absolute",
-                  bottom: "60px", // show above input
-                  right: 0,
-                  zIndex: 1000,
-                  backgroundColor: "white", // customize background
-                  borderRadius: "12px",
-                  boxShadow: 3,
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "flex-end",
+                  backgroundColor: "#f3f3f3",
+                  borderRadius: "24px",
+                  paddingRight: 1,
                 }}
               >
-                <Picker
-                  onEmojiClick={onEmojiClick}
-                  width={"260px"}
-                  height={"360px"}
-                  emojiStyle="google"
+                <InputBase
+                  sx={{
+                    width: "80%",
+                    flexGrow: 2,
+                    ml: 1,
+                    px: 2,
+                    py: 1,
+                    "& .MuiInputBase-input": {
+                      resize: "none", // prevent manual resize
+                      // overflow: "auto", // enable scrollbar when max height hit
+                      maxHeight: "120px", // limit height (~5-6 lines)
+                      lineHeight: "20px", // controls line spacing
+                    },
+                  }}
+                  placeholder="Type a message..."
+                  inputProps={{ "aria-label": "type a message" }}
+                  type="text"
+                  value={message}
+                  multiline
+                  maxRows={6}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onDrop={(e) => e.preventDefault()} // stop URL paste
+                  onDragOver={(e) => e.preventDefault()}
                 />
+                <IconButton
+                  type="button"
+                  aria-label="gif"
+                  onClick={handleGifClick}
+                >
+                  <GifBoxOutlinedIcon color="primary" />
+                </IconButton>
+                <IconButton
+                  type="button"
+                  aria-label="emoji"
+                  // sx={{ ml: 2 }}
+                  onClick={handleEmojiClick}
+                >
+                  <MoodIcon color="primary" />
+                </IconButton>
               </Box>
+            </Box>
+            {openGifPicker && (
+              <ClickAwayListener onClickAway={handleGifClick}>
+                <Box
+                  sx={{
+                    height: "400px",
+                    position: "absolute",
+                    bottom: "60px", // show above input
+                    right: 0,
+                    zIndex: 100,
+                    overflowY: "auto",
+                    backgroundColor: "white", // customize background
+                    borderRadius: "12px",
+                    boxShadow: 3,
+                  }}
+                >
+                  <GIFPicker handleOnGifClick={OnGifClick} />
+                </Box>
+              </ClickAwayListener>
+            )}
+            {openEmojiPicker && (
+              <ClickAwayListener onClickAway={handleEmojiClick}>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: "60px", // show above input
+                    right: 0,
+                    zIndex: 1000,
+                    backgroundColor: "white", // customize background
+                    borderRadius: "12px",
+                    boxShadow: 3,
+                  }}
+                >
+                  <Picker
+                    onEmojiClick={onEmojiClick}
+                    width={"260px"}
+                    height={"360px"}
+                    emojiStyle="google"
+                  />
+                </Box>
+              </ClickAwayListener>
             )}
           </Box>
 
           <IconButton
             type="button"
             aria-label="send"
-            disabled={!message.trim()}
+            disabled={!message.trim() && !gifUrl}
             onClick={handleSubmit}
-            sx={{ backgroundColor: "#f3f3f3", borderRadius: "20px", ml: 1 }}
+            sx={{
+              backgroundColor: "#f3f3f3",
+              borderRadius: "20px",
+              ml: 1,
+              // marginBottom: "4px",
+            }}
           >
-            <SendIcon color={message.trim() ? "primary" : "light"} />
+            <SendIcon color={message.trim() || gifUrl ? "primary" : "light"} />
           </IconButton>
+          {showNewMsgButton && (
+            <IconButton
+              onClick={jumpToBottom}
+              variant="contained"
+              sx={{
+                position: "absolute",
+                right: "50%",
+                top: "-46px",
+                zIndex: 20,
+                borderRadius: "999px",
+                backgroundColor: "#f3f3f3",
+              }}
+            >
+              <KeyboardArrowDownIcon color="primary" />
+            </IconButton>
+          )}
         </Box>
       </form>
-      {showNewMsgButton && (
-        <IconButton
-          onClick={jumpToBottom}
-          variant="contained"
-          sx={{
-            position: "absolute",
-            right: "50%",
-            bottom: 72,
-            zIndex: 20,
-            borderRadius: "999px",
-            backgroundColor: "#f3f3f3",
-          }}
-        >
-          <KeyboardArrowDownIcon color="primary" />
-        </IconButton>
-      )}
     </Box>
   );
 }

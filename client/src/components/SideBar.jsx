@@ -67,7 +67,7 @@ function SideBar({ getAvailableUsers }) {
   useEffect(() => {
     (async () => {
       try {
-        const [requestedUsersData, confiremedUsersData] = await Promise.all([
+        let [requestedUsersData, confiremedUsersData] = await Promise.all([
           getRequestedUsers(db),
           getConfiremedUsers(db),
         ]);
@@ -294,7 +294,15 @@ function SideBar({ getAvailableUsers }) {
                   width: "100%",
                   maxWidth: 360,
                   bgcolor: "background.paper",
-                  padding: "0px",
+                  position: "relative",
+                  overflow: "auto",
+                  maxHeight: 350,
+                  padding: 0,
+                  "&::-webkit-scrollbar": {
+                    display: "none",
+                  },
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
                 }}
               >
                 {confiremedUsers?.map((user) => {
@@ -313,6 +321,15 @@ function SideBar({ getAvailableUsers }) {
                 width: "100%",
                 maxWidth: 360,
                 bgcolor: "background.paper",
+                position: "relative",
+                overflow: "auto",
+                maxHeight: 350,
+                padding: 0,
+                "&::-webkit-scrollbar": {
+                  display: "none",
+                },
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
               }}
             >
               {requestedUsers?.map((user) => {

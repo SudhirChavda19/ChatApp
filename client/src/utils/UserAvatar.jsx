@@ -12,13 +12,11 @@ export default function UserAvatar({ name, size }) {
     return hash;
   };
 
-  // Convert hash → hex color
   const hashToColor = (hash, offset = 0) => {
-    const value = (hash >> offset) & 0xffffff; // 24-bit
+    const value = (hash >> offset) & 0xffffff;
     return "#" + ("000000" + value.toString(16)).slice(-6);
   };
 
-  // Generate 5 fixed colors for a given user
   const generateUserColors = (userName) => {
     const hash = stringToHash(userName);
     return [
@@ -26,13 +24,12 @@ export default function UserAvatar({ name, size }) {
       hashToColor(hash, 6),
       hashToColor(hash, 12),
       hashToColor(hash, 18),
-      "#FFFFFF", // keep white for balance
+      "#FFFFFF",
     ];
   };
 
   useEffect(() => {
     if(name){
-
       setRandomColor(generateUserColors(name));
     }
   }, [name]);

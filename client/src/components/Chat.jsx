@@ -96,17 +96,10 @@ function Chat({ children }) {
   return (
     <>
       
-        <Card sx={{ height: "84vh", display: "flex", flexDirection: "row" }}>
-          {/* SideBar*/}
+        <Card sx={{ height: "86vh", display: "flex", flexDirection: "row" }}>
           <SideBar getAvailableUsers={getAvailableUsers} />
           <Divider orientation="vertical" flexItem />
           <Outlet isUsersAvailable={confiremedUsers ? true : false}/>
-          {/* { confiremedUsers && confiremedUsers.length > 0 ? (
-          <Outlet />
-          ) : (
-            <NoUserFallback userName={userName} />
-            )} */}
-          {/* <NoUserFallback userName={userName} /> */}
         </Card>
     </>
   );
