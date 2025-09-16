@@ -163,26 +163,44 @@ function SideBar({ getAvailableUsers }) {
     setTabvalue(newValue);
   };
 
-  const handleAcceptRequest = async ({ roomId, id, name }) => {
+  const handleAcceptReject = async (isAccepted, { roomId, id, name }) => {
     const sendUserData = { id: userId, name: userName };
-    socket.timeout(2000).emit(
-      "request-accepted",
-      {
-        roomId,
-        receiverId: id,
-        userData: sendUserData,
-      },
-      (err, res) => {
-        if (res && !res?.status) {
-          setOpenSnackBar(true);
-        } else {
-          onRequestAccept(roomId, id, name);
+    if (isAccepted) {
+      socket.timeout(2000).emit(
+        "request-accepted",
+        {
+          roomId,
+          receiverId: id,
+          userData: sendUserData,
+        },
+        (err, res) => {
+          if (res && !res?.status) {
+            setOpenSnackBar(true);
+          } else {
+            onRequestAcceptReject(roomId, id, name);
+          }
         }
-      }
-    );
+      );
+    } else {
+      socket.timeout(2000).emit(
+        "request-accepted",
+        {
+          roomId,
+          receiverId: id,
+          userData: sendUserData,
+        },
+        (err, res) => {
+          if (res && !res?.status) {
+            setOpenSnackBar(true);
+          } else {
+            onRequestAcceptReject(roomId, id, name);
+          }
+        }
+      );
+    }
   };
 
-  const onRequestAccept = async (roomId, id, name) => {
+  const onRequestAcceptReject = async (roomId, id, name) => {
     const userObject = {
       id,
       name,
@@ -203,8 +221,6 @@ function SideBar({ getAvailableUsers }) {
     }
   };
 
-  // const handleRejectRequest = () => {
-  // }
 
   const style = {
     py: 0,
@@ -254,7 +270,7 @@ function SideBar({ getAvailableUsers }) {
           </ListItemIcon>
           <ListItemText
             sx={{ my: 0 }}
-            primary="Chatapp"
+            primary="VatChit"
             primaryTypographyProps={{
               fontSize: 24,
               fontWeight: "bolder",
@@ -337,7 +353,7 @@ function SideBar({ getAvailableUsers }) {
                   <ListUser
                     key={user.id}
                     userData={user}
-                    handleAcceptRequest={handleAcceptRequest}
+                    handleAcceptReject={handleAcceptReject}
                   />
                 );
               })}
