@@ -19,7 +19,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { useSocketContext } from "../context/SocketContext";
-import UserAvatar from "../utils/UserAvatar";
+import UserAvatar from "./common/UserAvatar";
 
 function ListUser({ userData, handleAcceptReject }) {
   const [user, setUser] = useState({});

@@ -2,13 +2,14 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Container, TextField, Typography, Card } from "@mui/material";
 import { v4 as uuidv4 } from 'uuid';
-import { createUser } from "../services/userDao";
-import { useDBContext } from "../context/DBContext";
-import { useAuthContext } from "../context/AuthContext";
+import { createUser } from "../../services/userDao";
+import { useDBContext } from "../../context/DBContext";
+import { useAuthContext } from "../../context/AuthContext";
 
 
-function SignIn() {
+function SignInForgotpassword() {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
   const [userName, setUserName] = useState("");
   const { setAuthUser } = useAuthContext();
 
@@ -38,8 +39,20 @@ function SignIn() {
         </Typography>
         <TextField
           type="text"
+          minLength={2}
+          maxLength={25}
+          value={userName}
+          onChange={(e) => setUserName(e.target.value)}
+          name="username"
+          id="username"
+          label="User Name"
+          variant="outlined"
+          required
+        ></TextField>
+        <TextField
+          type="text"
           minLength={6}
-          maxLength={12}
+          maxLength={25}
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
           name="username"
@@ -58,4 +71,4 @@ function SignIn() {
   );
 }
 
-export default SignIn;
+export default SignInForgotpassword;

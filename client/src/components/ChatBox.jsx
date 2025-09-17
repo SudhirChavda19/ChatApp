@@ -32,8 +32,8 @@ import { useAuthContext } from "../context/AuthContext";
 import { v4 as uuidv4 } from "uuid";
 import notificationSound from "../assets/notification.mp3";
 import { getRoomMessages, storeMessages } from "../services/messageDao";
-import UserAvatar from "../utils/UserAvatar";
-import GIFPicker from "../utils/GIFPicker";
+import UserAvatar from "./common/UserAvatar";
+import GIFPicker from "./common/GIFPicker";
 
 function ChatBox() {
   const [user, setUser] = useState({});

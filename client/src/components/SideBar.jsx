@@ -46,7 +46,7 @@ import { useDBContext } from "../context/DBContext";
 import JoinRoomDialog from "./JoinRoomDialog";
 import { useSocketContext } from "../context/SocketContext";
 import ListUser from "./ListUser";
-import SnackBar from "../utils/SnackBar";
+import SnackBar from "./common/SnackBar";
 
 function SideBar({ getAvailableUsers }) {
   const [requestedUsers, setRequestedUsers] = useState([]);
