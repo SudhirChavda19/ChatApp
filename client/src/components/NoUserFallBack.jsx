@@ -17,12 +17,12 @@ console.log('isUsersAvailable :', isUsersAvailable);
   const [openDialog, setOpenDialog] = useState(false);
   const [confiremedUsers, setConfiremedUsers] = useState([]);
 
-  useEffect(() => {
-    (async () => {
-      const confiremedUserData = await getConfiremedUsers(db);
-      if (confiremedUserData.length > 0) setConfiremedUsers(confiremedUserData);
-    })()
-  }, [isUsersAvailable])
+  // useEffect(() => {
+  //   (async () => {
+  //     const confiremedUserData = await getConfiremedUsers(db);
+  //     if (confiremedUserData.length > 0) setConfiremedUsers(confiremedUserData);
+  //   })()
+  // }, [isUsersAvailable])
 
   const handleClickOpen = () => {
     setOpenDialog(true);

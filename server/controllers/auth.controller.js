@@ -1,11 +1,12 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/user.model.js");
-const generateTokenAndSetCookie = require("../utils/generateToken.js");
+const { generateTokenAndSetCookie } = require("../utils/generateToken.js");
 
 const signUp = async (req, res) => {
   try {
-    const { userName, email, password, confirmPassword } = req.body;
-    const user = User.findOne({ email }).promise();
+    const { userName, email, password } = req.body;
+
+    const user = await User.findOne({ email });
     console.log("user :", user);
 
     if (user) {
@@ -25,12 +26,11 @@ const signUp = async (req, res) => {
     });
 
     if (newUser) {
-      //   generateTokenAndSetCookie(newUser._id, res);
       await newUser.save();
       return res.status(201).json({
         status: "Success",
         message: "User created successfully",
-        data: newUser,
+        data: { user: { email: newUser.email } },
       });
     } else {
       return res.status(400).json({
@@ -39,6 +39,7 @@ const signUp = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log("Error in signin controller :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -49,7 +50,8 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).promise();
+    console.log("req.body :", req.body);
+    const user = await User.findOne({ email });
     console.log("user :", user);
     if (!user) {
       return res.status(400).json({
@@ -59,7 +61,7 @@ const signIn = async (req, res) => {
     }
 
     generateTokenAndSetCookie(user._id, res);
-
+    
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res
@@ -73,7 +75,7 @@ const signIn = async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.log("Error in signin controller", error.message);
+    console.log("Error in signin controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -107,7 +109,7 @@ const forgotPassword = async (req, res) => {
       message: "Password updated successfully",
     });
   } catch (error) {
-    console.log("Error in forgotPassword controller", error.message);
+    console.log("Error in forgotPassword controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -131,7 +133,7 @@ const signOut = (req, res) => {
       message: "Signed out successfully",
     });
   } catch (error) {
-    console.log("Error in signOut controller", error.message);
+    console.log("Error in signOut controller", error);
     return res.status(500).json({
       status: "Fail",
       error: "Internal Server Error",

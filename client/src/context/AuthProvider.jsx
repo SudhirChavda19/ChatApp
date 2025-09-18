@@ -2,10 +2,21 @@ import { useState } from "react";
 import { AuthContext } from "./AuthContext";
 
 export const AuthContextProvider = ({ children }) => {
-    const userId = localStorage.getItem("userId");
-    const userName = localStorage.getItem("userName");
-    const value = userId && userName ? {userId, userName} : null;
-	const [authUser, setAuthUser] = useState(value);
+  const [authUser, setAuthUser] = useState(false);
 
-	return <AuthContext.Provider value={{ authUser, setAuthUser }}>{children}</AuthContext.Provider>;
+  const userId = localStorage.getItem("userId");
+  const expirationTime = localStorage.getItem("userTokenExpiration");
+  if (!userId || !expirationTime || new Date(expirationTime) < new Date()) {
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userTokenExpiration");
+    if(authUser) setAuthUser(false);
+  } else {
+    if(!authUser) setAuthUser(true);
+  }
+
+  return (
+    <AuthContext.Provider value={{ authUser, setAuthUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

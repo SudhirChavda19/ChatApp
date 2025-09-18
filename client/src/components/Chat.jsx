@@ -12,47 +12,6 @@ import { useDBContext } from "../context/DBContext";
 import NoUserFallback from "./NoUserFallBack";
 import { useSocketContext } from "../context/SocketContext";
 
-function ScrollTop(props) {
-  const { children, window } = props;
-  // Note that you normally won't need to set the window ref as useScrollTrigger
-  // will default to window.
-  // This is only being set here because the demo is in an iframe.
-  const trigger = useScrollTrigger({
-    target: window ? window() : undefined,
-    disableHysteresis: true,
-    threshold: 100,
-  });
-
-  const handleClick = (event) => {
-    const anchor = (event.target.ownerDocument || document).querySelector(
-      "#back-to-top-anchor"
-    );
-
-    if (anchor) {
-      anchor.scrollIntoView({
-        block: "center",
-      });
-    }
-  };
-
-  return (
-    <Fade in={trigger}>
-      <Box
-        onClick={handleClick}
-        role="presentation"
-        sx={{ position: "fixed", bottom: 16, right: 16 }}
-      >
-        {children}
-      </Box>
-    </Fade>
-  );
-}
-
-ScrollTop.propTypes = {
-  children: PropTypes.element,
-  window: PropTypes.func,
-};
-
 function Chat({ children }) {
   // const [socketId, setSocketId] = useState("");
   const [allMessages, setAllMessages] = useState([]);
@@ -72,26 +31,20 @@ function Chat({ children }) {
     console.log("confiremedUsers LENGTH:", confiremedUsers);
   };
 
-  useEffect(() => {
-    (async () => {
-      const usersData = await getUsers(userId, db);
-      console.log("usersData :", usersData);
-      setAllUsers(usersData);
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     const usersData = await getUsers(userId, db);
+  //     console.log("usersData :", usersData);
+  //     setAllUsers(usersData);
+  //   })();
+  // }, []);
 
-  useEffect(() => {
-    socket.on("receive-message", (data) => {
-      // console.log("Received Message :", data);
-      setAllMessages((messages) => [...messages, data]);
-    });
-  }, []);
-
-  useEffect(() => {
-    // 👇️ scroll to bottom every time messages change
-    lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("lastMessageRef :", lastMessageRef);
-  }, [allMessages]);
+  // useEffect(() => {
+  //   socket.on("receive-message", (data) => {
+  //     // console.log("Received Message :", data);
+  //     setAllMessages((messages) => [...messages, data]);
+  //   });
+  // }, []);
 
   return (
     <>

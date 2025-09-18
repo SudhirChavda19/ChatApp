@@ -14,6 +14,7 @@ import WelcomePage from "../components/WelcomePage";
 import BaseLayout from "../components/BaseLayout";
 import SignIn from "../components/pages/SignIn";
 import ForgotPassword from "../components/pages/ForgotPassword";
+import SignUp from "../components/pages/SignUp";
 
 function AllRoutes() {
   return (
@@ -24,7 +25,7 @@ function AllRoutes() {
             <Route element={<PublicRoute />}>
               <Route index element={<Navigate to="/sign-in" replace />} />
               <Route path="sign-in" element={<SignIn />}></Route>
-              {/* <Route path="sign-up" element={<SignInForgotpassword />}></Route> */}
+              <Route path="sign-up" element={<SignUp />}></Route>
               <Route path="forgot-password" element={<ForgotPassword />}></Route>
             </Route>
             <Route element={<ProtectedRoute />}>

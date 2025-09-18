@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
   userName: {
@@ -15,10 +14,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    validate: {
-      validator: (v) => emailRegex.test(v),
-      message: (props) => `${props.value} is not a valid email!`,
-    },
+    trim: true,
   },
   password: {
     type: String,
@@ -30,4 +26,4 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-exports.User = mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", userSchema);

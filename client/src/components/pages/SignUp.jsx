@@ -1,74 +1,12 @@
-import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button, Container, TextField, Typography, Card } from "@mui/material";
-import { v4 as uuidv4 } from 'uuid';
-import { createUser } from "../../services/userDao";
-import { useDBContext } from "../../context/DBContext";
-import { useAuthContext } from "../../context/AuthContext";
+import React from "react";
+import EmailPassword from "../common/EmailPassword";
 
-
-function SignInForgotpassword() {
-  const navigate = useNavigate();
-  const [userName, setUserName] = useState("");
-  const [userName, setUserName] = useState("");
-  const { setAuthUser } = useAuthContext();
-
-  const db = useDBContext();
-  // const socket = useSocketContext();
-  const uniqueId = uuidv4();
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    localStorage.setItem("userName", userName);
-    localStorage.setItem("userId", uniqueId);
-    setAuthUser({userId: uniqueId, userName});
-    const userData = {
-      id: uniqueId,
-      name: userName,
-      createdAt: Date.now()
-    }
-    createUser(userData, db);
-    navigate("/chat", { replace: true });
-  };
-
+function SignUp() {
   return (
-    <Card sx={{ height: "84vh", display: "flex", flexDirection: "column" }}>
-      <form onSubmit={handleSubmit} style={{margin: "auto auto"}}>
-        <Typography variant="h5" component="div" gutterBottom>
-                  Enter User Name to Start Chat
-        </Typography>
-        <TextField
-          type="text"
-          minLength={2}
-          maxLength={25}
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          name="username"
-          id="username"
-          label="User Name"
-          variant="outlined"
-          required
-        ></TextField>
-        <TextField
-          type="text"
-          minLength={6}
-          maxLength={25}
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          name="username"
-          id="username"
-          label="User Name"
-          variant="outlined"
-          required
-        ></TextField>
-        <div style={{marginTop: "8.4px"}}>   
-        <Button type="submit" variant="contained">
-          Start Chat
-        </Button>
-        </div>
-      </form>
-    </Card>
+    <>
+      <EmailPassword />
+    </>
   );
 }
 
-export default SignInForgotpassword;
+export default SignUp;

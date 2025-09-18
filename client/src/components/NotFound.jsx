@@ -1,16 +1,17 @@
 import React from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../context/AuthContext";
 
 const NotFound = () => {
   const navigate = useNavigate();
+  const { authUser } = useAuthContext();
 
-  const userLoggedIn = !!localStorage.getItem("userName");
   const handleNavigation = () => {
-    if(userLoggedIn) {
+    if(authUser) {
         navigate("/chat")
     } else {
-        navigate("/")
+        navigate("/sign-in")
     }
   }
 

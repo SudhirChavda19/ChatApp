@@ -30,6 +30,8 @@ import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import ChatIcon from "@mui/icons-material/Chat";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import PersonIcon from "@mui/icons-material/Person";
+import LogoutIcon from "@mui/icons-material/Logout";
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -64,80 +66,80 @@ function SideBar({ getAvailableUsers }) {
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
 
-  useEffect(() => {
-    (async () => {
-      try {
-        let [requestedUsersData, confiremedUsersData] = await Promise.all([
-          getRequestedUsers(db),
-          getConfiremedUsers(db),
-        ]);
-        console.log("requestedUsers :", requestedUsersData);
-        console.log("confiremedUsers :", confiremedUsersData);
-        if (requestedUsersData.length > 0)
-          setRequestedUsers(requestedUsersData);
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       let [requestedUsersData, confiremedUsersData] = await Promise.all([
+  //         getRequestedUsers(db),
+  //         getConfiremedUsers(db),
+  //       ]);
+  //       console.log("requestedUsers :", requestedUsersData);
+  //       console.log("confiremedUsers :", confiremedUsersData);
+  //       if (requestedUsersData.length > 0)
+  //         setRequestedUsers(requestedUsersData);
 
-        const confiremedUsersId = confiremedUsersData.map((user) => user.id);
-        if (confiremedUsersId.length > 0) {
-          socket
-            .timeout(2000)
-            .emit("online-user", confiremedUsersId, (error, res) => {
-              console.log("response: =========", res);
-              if (res.length > 0) {
-                setConfiremedUsers(
-                  confiremedUsersData.map((user) => {
-                    if (res.includes(user.id)) {
-                      return { ...user, online: true };
-                    } else {
-                      return { ...user, online: false };
-                    }
-                  })
-                );
-              } else {
-                setConfiremedUsers(confiremedUsersData);
-              }
-            });
-        }
-        getAvailableUsers(confiremedUsers?.length || 0);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    })();
-  }, [db]);
+  //       const confiremedUsersId = confiremedUsersData.map((user) => user.id);
+  //       if (confiremedUsersId.length > 0) {
+  //         socket
+  //           .timeout(2000)
+  //           .emit("online-user", confiremedUsersId, (error, res) => {
+  //             console.log("response: =========", res);
+  //             if (res.length > 0) {
+  //               setConfiremedUsers(
+  //                 confiremedUsersData.map((user) => {
+  //                   if (res.includes(user.id)) {
+  //                     return { ...user, online: true };
+  //                   } else {
+  //                     return { ...user, online: false };
+  //                   }
+  //                 })
+  //               );
+  //             } else {
+  //               setConfiremedUsers(confiremedUsersData);
+  //             }
+  //           });
+  //       }
+  //       getAvailableUsers(confiremedUsers?.length || 0);
+  //     } catch (error) {
+  //       console.error("Error fetching users:", error);
+  //     }
+  //   })();
+  // }, [db]);
 
-  useEffect(() => {
-    socket.on(
-      "request-to-join-room",
-      async ({ roomId, userData }, callback) => {
-        const userObject = {
-          id: userData.id,
-          name: userData.name,
-          roomId,
-          requested: true,
-          createdAt: Date.now(),
-        };
-        setRequestedUsers((users) => [...users, userObject]);
-        await createUser(userObject, db);
-        callback({ status: true });
-      }
-    );
-  }, []);
+  // useEffect(() => {
+  //   socket.on(
+  //     "request-to-join-room",
+  //     async ({ roomId, userData }, callback) => {
+  //       const userObject = {
+  //         id: userData.id,
+  //         name: userData.name,
+  //         roomId,
+  //         requested: true,
+  //         createdAt: Date.now(),
+  //       };
+  //       setRequestedUsers((users) => [...users, userObject]);
+  //       await createUser(userObject, db);
+  //       callback({ status: true });
+  //     }
+  //   );
+  // }, []);
 
-  useEffect(() => {
-    socket.on("request-accepted", ({ roomId, userData }, callback) => {
-      const userObject = {
-        id: userData.id,
-        name: userData.name,
-        roomId,
-        requested: false,
-        createdAt: Date.now(),
-      };
-      setConfiremedUsers((users) => [...users, userObject]);
-      const updatedUser = [...confiremedUsers, userObject];
-      getAvailableUsers(updatedUser.length);
-      createUser(userObject, db);
-      callback({ status: true });
-    });
-  }, []);
+  // useEffect(() => {
+  //   socket.on("request-accepted", ({ roomId, userData }, callback) => {
+  //     const userObject = {
+  //       id: userData.id,
+  //       name: userData.name,
+  //       roomId,
+  //       requested: false,
+  //       createdAt: Date.now(),
+  //     };
+  //     setConfiremedUsers((users) => [...users, userObject]);
+  //     const updatedUser = [...confiremedUsers, userObject];
+  //     getAvailableUsers(updatedUser.length);
+  //     createUser(userObject, db);
+  //     callback({ status: true });
+  //   });
+  // }, []);
 
   const handleClickOpen = () => {
     setOpenDialog(true);
@@ -220,7 +222,6 @@ function SideBar({ getAvailableUsers }) {
       setOpenSnackBar(false);
     }
   };
-
 
   const style = {
     py: 0,
@@ -381,42 +382,49 @@ function SideBar({ getAvailableUsers }) {
         }}
       >
         <Divider component="li" />
-        <ListItem sx={{ padding: "8px 16px 4px 16px" }}>
-          <ListItemButton sx={{ padding: 0 }}>
-            <ListItemIcon sx={{ minWidth: "34px" }}>
-              <SettingsIcon color="primary" />
-            </ListItemIcon>
-            <ListItemText primary="Settings" />
-          </ListItemButton>
-        </ListItem>
+        <Box
+          sx={{
+            padding: "6px",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            minWidth: "100%",
+            borderRadius: "12px",
+          }}
+        >
+          <ListItem sx={{ padding: 0, borderRadius: "12px" }}>
+            <ListItemButton sx={{ padding: "6px 10px", borderRadius: "12px" }}>
+              <ListItemIcon sx={{ minWidth: "34px" }}>
+                <AccountBoxIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Profile" />
+            </ListItemButton>
+          </ListItem>
+        </Box>
         <Divider variant="middle" component="li" />
 
         <ClickAwayListener onClickAway={handleTooltipClose}>
-          <ListItem sx={{ padding: "4px 16px 8px 16px" }}>
-            <ListItemText sx={{ flex: "none" }} primary="Copy your USER ID" />
-            <Tooltip
-              onClose={handleTooltipClose}
-              open={openTooltip}
-              disableFocusListener
-              disableHoverListener
-              disableTouchListener
-              title="Copied"
-              slotProps={{
-                popper: {
-                  disablePortal: true,
-                },
-              }}
-            >
-              <IconButton
-                onClick={() => {
-                  handleCopyUserId();
-                  handleTooltipOpen();
-                }}
+          <Box
+            sx={{
+              padding: "6px",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              minWidth: "100%",
+              borderRadius: "12px",
+            }}
+          >
+            <ListItem sx={{ borderRadius: "12px", padding: 0 }}>
+              <ListItemButton
+                sx={{ padding: "6px 10px", borderRadius: "12px" }}
               >
-                <ContentCopyIcon color="primary" fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </ListItem>
+                <ListItemIcon sx={{ minWidth: "34px" }}>
+                  <LogoutIcon color="primary" />
+                </ListItemIcon>
+                <ListItemText primary="Sign Out" />
+              </ListItemButton>
+            </ListItem>
+          </Box>
         </ClickAwayListener>
       </List>
     </Box>

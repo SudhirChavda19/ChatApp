@@ -56,16 +56,16 @@ const signUpValidation = () => [
     .withMessage("password must be atleast 6 character long")
     .isLength({ max: 30 })
     .withMessage("password maximum 30 character long"),
-  check("confirmPassword")
-    .exists()
-    .withMessage("confirmPassword can't be null"),
-  body("confirmPassword")
-    .notEmpty()
-    .withMessage("confirmPassword can't be empty")
-    .trim(),
-  check("confirmPassword")
-    .custom((value, { req }) => value === req.body.password)
-    .withMessage("Password not matched"),
+  // check("confirmPassword")
+  //   .exists()
+  //   .withMessage("confirmPassword can't be null"),
+  // body("confirmPassword")
+  //   .notEmpty()
+  //   .withMessage("confirmPassword can't be empty")
+  //   .trim(),
+  // check("confirmPassword")
+  //   .custom((value, { req }) => value === req.body.password)
+  //   .withMessage("Password not matched"),
 ];
 
 const signInValidation = () => [
@@ -94,6 +94,7 @@ const searchValidation = () => [
 ];
 
 const validate = (req, res, next) => {
+console.log('req ============:', req.body);
   const errors = validationResult(req);
   if (errors.isEmpty()) {
     return next();

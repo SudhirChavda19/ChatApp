@@ -1,6 +1,4 @@
-import React, { useContext } from "react";
-import { Container, Typography, Stack, CircularProgress } from "@mui/material";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React from "react";
 import AllRoutes from "./routes/AllRoutes";
 
 function App() {
