@@ -6,6 +6,7 @@ const { app, server } = require("./socket/socket");
 const connectToMongoDB = require("./db/connectMongoDB");
 
 const authRoutes = require("./routes/auth.routes.js");
+const UserRouter = require("./routes/user.route.js");
 
 dotenv.config();
 const PORT = process.env.PORT;
@@ -21,12 +22,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
-// app.use("/api/messages", messageRoutes);
-// app.use("/api/users", userRoutes);
-
-app.get("/", (req, res) => {
-  res.send("namaste World");
-});
+// app.use("/api/message", messageRoutes);
+app.use("/api/user", UserRouter);
 
 server.listen(PORT, () => {
   connectToMongoDB();

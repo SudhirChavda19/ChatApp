@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema({
   }
 }, {timestamps: true});
 
+userSchema.index({ userName: 1 });
+
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };

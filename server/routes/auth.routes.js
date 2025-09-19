@@ -3,14 +3,14 @@ const {signUp, signIn, forgotPassword, signOut} = require("../controllers/auth.c
 const validator = require("../middleware/requestValidation");
 const { auth } = require("../middleware/auth");
 
-const router = express.Router();
+const authRouter = express.Router();
 
-router.post("/signup", validator.signUpValidation(), validator.validate, signUp);
+authRouter.post("/signup", validator.signUpValidation(), validator.validate, signUp);
 
-router.post("/signin", validator.signInValidation(), validator.validate, signIn);
+authRouter.post("/signin", validator.signInValidation(), validator.validate, signIn);
 
-router.post("/forgotpassword", validator.forgotPasswordValidation(), validator.validate, forgotPassword);
+authRouter.post("/forgotpassword", validator.forgotPasswordValidation(), validator.validate, forgotPassword);
 
-router.post("/signout", auth, signOut)
+authRouter.post("/signout", auth,  signOut)
 
-module.exports = router;
+module.exports = authRouter;

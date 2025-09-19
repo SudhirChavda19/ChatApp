@@ -12,7 +12,7 @@ const signUp = async (req, res) => {
     if (user) {
       return res.status(400).json({
         status: "Fail",
-        message: "Username Already Exists",
+        message: "User Already Exists",
       });
     }
 
