@@ -21,4 +21,4 @@ const messageSchema = new mongoose.Schema(
 
 messageSchema.index({ roomId: 1, createdAt: -1 });
 
-exports.Message = mongoose.model("Message", messageSchema);
+exports.Message = mongoose.model("Messages", messageSchema);

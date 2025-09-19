@@ -32,4 +32,4 @@ const roomSchema = new mongoose.Schema({
 
 roomSchema.index({ participants: 1, updatedAt: -1 });
 
-exports.Room = mongoose.model("Room", roomSchema);
+exports.Room = mongoose.model("Rooms", roomSchema);

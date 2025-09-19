@@ -1,8 +1,8 @@
 const express = require("express");
-const dotenv = require("dotenv")
+const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const { app, server } = require("./socket/socket")
+const { app, server } = require("./socket/socket");
 const connectToMongoDB = require("./db/connectMongoDB");
 
 const authRoutes = require("./routes/auth.routes.js");
@@ -10,16 +10,15 @@ const authRoutes = require("./routes/auth.routes.js");
 dotenv.config();
 const PORT = process.env.PORT;
 const corsOptions = {
-    origin: true,
-    methods: ["GET", "PATCH", "POST", "DELETE"],
-    withCredentials: true,
-    credentials: true,
-    optionSuccessStatus: 200,
-    allowedHeaders: ["Content-Type", "Authorization"],
+  origin: "http://localhost:5173",
+  methods: ["GET", "PATCH", "POST", "DELETE"],
+  credentials: true,
 };
+
+app.use(cookieParser(process.env.JWT_SECRET));
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(cookieParser())
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
 // app.use("/api/messages", messageRoutes);

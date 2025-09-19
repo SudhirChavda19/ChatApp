@@ -12,7 +12,7 @@ const signUp = async (req, res) => {
     if (user) {
       return res.status(400).json({
         status: "Fail",
-        message: "Username already exists",
+        message: "Username Already Exists",
       });
     }
 
@@ -35,7 +35,7 @@ const signUp = async (req, res) => {
     } else {
       return res.status(400).json({
         status: "Fail",
-        message: "Invalid user data",
+        message: "Invalid User Data",
       });
     }
   } catch (error) {
@@ -86,7 +86,7 @@ const signIn = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
-    const user = await User.findOne({ email }).promise();
+    const user = await User.findOne({ email });
     console.log("user :", user);
     if (!user) {
       return res.status(400).json({
@@ -99,10 +99,6 @@ const forgotPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     user.password = hashedPassword;
     await user.save();
-
-    const expirationTime = new Date(Date.now() + 0);
-    const expiredCookieString = `email=; HttpOnly; Expires=${expirationTime.toUTCString()}; Path=/`;
-    res.setHeader("Set-Cookie", expiredCookieString);
 
     return res.status(201).json({
       status: "Success",
@@ -119,15 +115,6 @@ const forgotPassword = async (req, res) => {
 
 const signOut = (req, res) => {
   try {
-    // const expirationTime = new Date(Date.now() + 0);
-    // const expiredCookieString = `jwt=; HttpOnly;
-    // Expires=${expirationTime.toUTCString()}; Path=/`;
-    // res.setHeader("Set-Cookie", expiredCookieString);
-    // return res.status(200).json({
-    //   status: 200,
-    //   message: "Signed out successfully",
-    // });
-    res.clearCookie("email", { path: "/" });
     res.clearCookie("jwt", { path: "/" }).status(200).json({
       status: 200,
       message: "Signed out successfully",

@@ -3,7 +3,7 @@ import { Box, Typography, Button } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import { motion } from "framer-motion";
-import JoinRoomDialog from "./JoinRoomDialog";
+import CommonDialog from "./common/CommonDialog";
 import { useAuthContext } from "../context/AuthContext";
 import { getConfiremedUsers } from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
@@ -77,7 +77,7 @@ console.log('isUsersAvailable :', isUsersAvailable);
           >
             Start a Chat
           </Button>
-          <JoinRoomDialog open={openDialog} onClose={handleClickClose} />
+          <CommonDialog open={openDialog} onClose={handleClickClose} />
         </div>
       )}
     </Box>

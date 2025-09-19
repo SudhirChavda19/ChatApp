@@ -9,12 +9,12 @@ const axiosWithCredentials = axios.create({
 });
 
 // Optional: request interceptor (attach tokens)
-axiosWithCredentials.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token"); 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// axiosWithCredentials.interceptors.request.use((config) => {
+//   const token = localStorage.getItem("access_token"); 
+//   if (token) {
+//     config.headers.Authorization = `Bearer ${token}`;
+//   }
+//   return config;
+// });
 
 export default axiosWithCredentials;

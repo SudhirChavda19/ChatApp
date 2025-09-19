@@ -31,7 +31,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
-import AccountBoxIcon from '@mui/icons-material/AccountBox';
+import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -45,7 +45,7 @@ import {
   updateRequestStatus,
 } from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
-import JoinRoomDialog from "./JoinRoomDialog";
+import CommonDialog from "./common/CommonDialog";
 import { useSocketContext } from "../context/SocketContext";
 import ListUser from "./ListUser";
 import SnackBar from "./common/SnackBar";
@@ -54,7 +54,7 @@ function SideBar({ getAvailableUsers }) {
   const [requestedUsers, setRequestedUsers] = useState([]);
   const [confiremedUsers, setConfiremedUsers] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [openTooltip, setOpenTooltip] = useState(false);
+  const [openSignOutDialog, setOpenSignOutDialog] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
   const [openSnackBar, setOpenSnackBar] = useState(false);
   // const [loading, setLoading] = useState(true);
@@ -144,9 +144,15 @@ function SideBar({ getAvailableUsers }) {
   const handleClickOpen = () => {
     setOpenDialog(true);
   };
-
   const handleClickClose = () => {
     setOpenDialog(false);
+  };
+  
+  const handleClickOpenSignOut = () => {
+    setOpenSignOutDialog(true);
+  };
+  const handleClickCloseSignOut = () => {
+    setOpenSignOutDialog(false);
   };
 
   const handleCopyUserId = async () => {
@@ -282,7 +288,7 @@ function SideBar({ getAvailableUsers }) {
             <IconButton sx={{ minWidth: "24px" }} onClick={handleClickOpen}>
               <PersonAddAltIcon color="primary" />
             </IconButton>
-            <JoinRoomDialog open={openDialog} onClose={handleClickClose} />
+            <CommonDialog open={openDialog} onClose={handleClickClose} />
           </Tooltip>
         </ListItem>
         <Divider component="li" />
@@ -292,14 +298,24 @@ function SideBar({ getAvailableUsers }) {
             onChange={handleTabChange}
             aria-label="icon position tabs example"
             centered={true}
-            sx={{ width: "100%", button: { padding: "0px 34px" } }}
+            sx={{
+              width: "100%",
+              minHeight: "fit-content",
+              button: { padding: "12px 34px" },
+            }}
           >
             <Tab
               icon={<ChatIcon color="primary" />}
               iconPosition="start"
               label="Chats"
+              sx={{ minHeight: 40 }}
             />
-            <Tab icon={<PersonIcon />} iconPosition="start" label="Requests" />
+            <Tab
+              icon={<PersonIcon />}
+              iconPosition="start"
+              label="Requests"
+              sx={{ minHeight: 40 }}
+            />
           </Tabs>
         </ListItem>
         {tabValue === 0 ? (
@@ -403,29 +419,35 @@ function SideBar({ getAvailableUsers }) {
         </Box>
         <Divider variant="middle" component="li" />
 
-        <ClickAwayListener onClickAway={handleTooltipClose}>
-          <Box
-            sx={{
-              padding: "6px",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              minWidth: "100%",
-              borderRadius: "12px",
-            }}
-          >
-            <ListItem sx={{ borderRadius: "12px", padding: 0 }}>
-              <ListItemButton
-                sx={{ padding: "6px 10px", borderRadius: "12px" }}
-              >
-                <ListItemIcon sx={{ minWidth: "34px" }}>
-                  <LogoutIcon color="primary" />
-                </ListItemIcon>
-                <ListItemText primary="Sign Out" />
-              </ListItemButton>
-            </ListItem>
-          </Box>
-        </ClickAwayListener>
+        {/* <ClickAwayListener onClickAway={handleTooltipClose}> */}
+        <Box
+          sx={{
+            padding: "6px",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            minWidth: "100%",
+            borderRadius: "12px",
+          }}
+        >
+          <ListItem sx={{ borderRadius: "12px", padding: 0 }}>
+            <ListItemButton
+              sx={{ padding: "6px 10px", borderRadius: "12px" }}
+              onClick={handleClickOpenSignOut}
+            >
+              <ListItemIcon sx={{ minWidth: "34px" }}>
+                <LogoutIcon color="primary" />
+              </ListItemIcon>
+              <ListItemText primary="Sign Out" />
+            </ListItemButton>
+            <CommonDialog
+              open={openSignOutDialog}
+              onClose={handleClickCloseSignOut}
+              signOut={true}
+            />
+          </ListItem>
+        </Box>
+        {/* </ClickAwayListener> */}
       </List>
     </Box>
   );

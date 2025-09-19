@@ -6,11 +6,10 @@ module.exports.generateTokenAndSetCookie = (userId, res) => {
   });
 
   res.cookie("jwt", token, {
-    maxAge: 5 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: true,
+    secure: false,
+    sameSite: "lax",
     path: "/",
-    sameSite: "strict",
-    // secure: process.env.NODE_ENV !== "development",
+    maxAge: 5 * 24 * 60 * 60 * 1000
   });
 };

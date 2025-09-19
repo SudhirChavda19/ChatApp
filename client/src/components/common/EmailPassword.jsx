@@ -10,6 +10,7 @@ import {
   Box,
   IconButton,
   InputAdornment,
+  // Snackbar
 } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
 import { useAuthContext } from "../../context/AuthContext";
@@ -21,6 +22,7 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { AuthApi } from "../../services/authService";
+import SnackBar from "./SnackBar";
 
 function EmailPassword() {
   const [userName, setUserName] = useState("");
@@ -33,6 +35,9 @@ function EmailPassword() {
   const [passwordError, setPasswordError] = useState(null);
   const [passwordOnBlur, setPasswordOnBlur] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [openErrorSnackBar, setOpenErrorSnackBar] = useState(false);
+  const [serverError, setServerError] = useState(null);
   const [path, setPath] = useState("");
 
   const navigate = useNavigate();
@@ -51,12 +56,14 @@ function EmailPassword() {
   const signUpMutation = useMutation({
     mutationFn: AuthApi.SignUpService,
     onError: (error) => {
-      console.log("error :", error);
+      const { message, status } = error.response.data;
+      if (status === "Fail") {
+        setServerError(message);
+        setOpenErrorSnackBar(true);
+      }
     },
     onSuccess: (data) => {
-      console.log("data :", data);
-      if (data.status === 200) {
-        // const { _id, userName } = data.data.data;
+      if (data.status === 201) {
         navigate("/sign-in", { replace: true });
       }
     },
@@ -65,6 +72,11 @@ function EmailPassword() {
     mutationFn: AuthApi.SignInService,
     onError: (error) => {
       console.log("error :", error.response.data);
+      const { message, status } = error.response.data;
+      if (status === "Fail") {
+        setServerError(message);
+        setOpenErrorSnackBar(true);
+      }
     },
     onSuccess: (data) => {
       console.log("data :", data);
@@ -85,16 +97,26 @@ function EmailPassword() {
   });
   const forgotPasswordMutation = useMutation({
     mutationFn: AuthApi.ForgotPasswordService,
-    onSuccess: (res) => {
-      console.log("RES=======: ", res);
-      // refresh the profile after update
-      // queryClient.invalidateQueries({ queryKey: ["user", "profile"] });
+    onError: (error) => {
+      console.log("error :", error.response.data);
+      const { message, status } = error.response.data;
+      if (status === "Fail") {
+        setServerError(message);
+        setOpenErrorSnackBar(true);
+      }
+    },
+    onSuccess: (data) => {
+      console.log("RES=======: ", data);
+      if (data.status === 201) {
+        console.log("navigate :", navigate);
+        navigate("/sign-in", { replace: true });
+      }
     },
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (emailError && passwordError && userNameError) return;
+    if (emailError || passwordError || userNameError) return;
 
     const data = {
       email,
@@ -115,9 +137,6 @@ function EmailPassword() {
   };
   const userSignIn = async (data) => {
     signInMutation.mutate(data);
-    // localStorage.setItem("userName", userName);
-    // localStorage.setItem("userId", uniqueId);
-    // setAuthUser({userId: uniqueId, userName});
   };
   const userForgotPassword = async (data) => {
     data.newPassword = password;
@@ -141,6 +160,12 @@ function EmailPassword() {
     const value = e.target.value;
     setPassword(value);
     if (passwordOnBlur) setPasswordError(passwordValidate(value));
+  };
+
+  const handleSnackBar = (snackBarStatus) => {
+    if (!snackBarStatus) {
+      setOpenErrorSnackBar(false);
+    }
   };
 
   return (
@@ -246,6 +271,14 @@ function EmailPassword() {
               ? "Sign Up"
               : "Reset Password"}
           </Button>
+          <SnackBar
+            setHorizontal={"center"}
+            setVertical={"top"}
+            setOpen={openErrorSnackBar}
+            setMessage={serverError}
+            setSeverity={"error"}
+            handleSnackBar={handleSnackBar}
+          />
         </div>
         {path === "/sign-in" && (
           <Box sx={{ margin: 0, padding: 0 }}>
