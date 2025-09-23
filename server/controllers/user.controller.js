@@ -1,43 +1,71 @@
 const User = require("../models/user.model.js");
 
 const searchUser = async (req, res) => {
-    try {
-         const { username, page, limit } = req.query;
-        const skip = (page - 1) * limit;
-        const searchedUsers = await User.aggregate([
-            {
-                $search: {
-                    index: "userName_1",
-                    text: {
-                        query: username,
-                        path: "userName",
-                    },
-                },
-                $limit: limit,
-                $skip: skip
+  try {
+    let { username, page, limit } = req.query;
+    console.log("username --------:", username);
+    page = Number(page) || 1;
+    limit = Number(limit) || 10;
+    const skip = (page - 1) * limit;
+    const [searchedUsers, totalCount] = await Promise.all([
+      User.aggregate([
+        {
+          $search: {
+            index: "username_search",
+            autocomplete: {
+              path: "userName",
+              query: username,
             },
-        ]);
+          },
+        },
+        { $skip: skip },
+        { $limit: limit },
+        { $project: { userName: 1, email: 1 } },
+      ]),
+      User.aggregate([
+        {
+          $search: {
+            index: "username_search",
+            autocomplete: {
+              path: "userName",
+              query: username,
+            },
+          },
+        },
+        { $count: "totalCount" },
+      ]),
+    ]);
 
-        if (!searchedUsers) {
-            return res.status(404).json({
-                status: "Fail",
-                message: "Data Not Found",
-            });
-        }
-        return res.status(200).json({
-            status: "Success",
-            message: "Qustion searched Successfully",
-            data: searchedData,
-        });
-    } catch (error) {
-        console.log("Error in search user controller :", error);
+    console.log("totalCount :", totalCount);
+
+    const totalPages = Math.ceil(totalCount[0]?.totalCount / limit);
+    console.log('totalPages :', totalPages);
+    const hasNextPage = page < totalPages;
+    console.log('hasNextPage :', hasNextPage);
+
+    console.log("searchedUsers :", searchedUsers);
+    // if (searchedUsers.length === 0) {
+    //   return res.status(404).json({
+    //     status: "Fail",
+    //     message: "No User Found",
+    //   });
+    // }
+    return res.status(200).json({
+      status: "Success",
+      message: "Users Searched Successfully",
+      data: searchedUsers,
+      hasNextPage,
+      totalPages,
+    });
+  } catch (error) {
+    console.log("Error in search user controller :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
     });
-    }
-}
+  }
+};
 
 module.exports = {
-    searchUser
-}
+  searchUser,
+};
