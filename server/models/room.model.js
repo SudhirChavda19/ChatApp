@@ -12,12 +12,11 @@ const roomSchema = new mongoose.Schema({
       required: true,
     },
   ],
-  isConfirmed: { //receiver accept request then true
+  isUserConfirmed: { //receiver accept request then true
     type: Boolean,
   },
   isGroup: {
-    type: Boolean,
-    default: false, // false = direct chat, true = group chat
+    type: Boolean, // false = direct chat, true = group chat
   },
   lastMessage: {
     type: mongoose.Schema.Types.ObjectId,

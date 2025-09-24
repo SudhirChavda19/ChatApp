@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useContext, useRef, forwardRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+  forwardRef,
+} from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   useMutation,
@@ -26,6 +32,7 @@ import { useSocketContext } from "../../context/SocketContext";
 import { AuthApi } from "../../services/authService";
 import { useAuthContext } from "../../context/AuthContext";
 import { UserApi } from "../../services/userService";
+import UserAvatar from "./UserAvatar";
 
 function CommonDialog({ open, onClose, signOut }) {
   const [searchUserName, setSearchUserName] = useState("");
@@ -56,6 +63,7 @@ function CommonDialog({ open, onClose, signOut }) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ["search", debounceInput],
     queryFn: ({ pageParam }) =>
@@ -65,7 +73,11 @@ function CommonDialog({ open, onClose, signOut }) {
       const { hasNextPage } = lastPage;
       return hasNextPage ? allPages.length + 1 : undefined;
     },
-    enabled: !!debounceInput,
+    enabled: false,
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -86,8 +98,21 @@ function CommonDialog({ open, onClose, signOut }) {
 
   useEffect(() => {
     if (searchUserName?.trim() && searchUserName?.trim().length > 1) {
+      setUserList([]);
+      console.log("searchUserName?.trim() :", searchUserName?.trim());
+      setDebounceInput(searchUserName?.trim());
       const timeoutId = setTimeout(() => {
-        setDebounceInput(searchUserName?.trim());
+        console.log("debounceInput :", debounceInput);
+        if (debounceInput) {
+          queryClient.removeQueries({
+            queryKey: ["search", debounceInput],
+            exact: true,
+          });
+          (async () => {
+            await refetch();
+          })();
+          setLoading(false);
+        }
       }, 1000);
       return () => clearTimeout(timeoutId);
     } else {
@@ -98,7 +123,10 @@ function CommonDialog({ open, onClose, signOut }) {
 
   const handleClose = () => {
     setSearchUserName("");
+    setDebounceInput(null);
+    setSelectedUser(null);
     setErrorText("");
+    setUserList([]);
     onClose();
   };
 
@@ -123,11 +151,11 @@ function CommonDialog({ open, onClose, signOut }) {
   });
 
   const handleOnChange = async (e, newValue, reason) => {
-    if(reason !== "reset" && reason !== "blur") {
+    e.preventDefault();
+    if (reason !== "reset" && reason !== "blur") {
       const value = e.target.value;
       setLoading(true);
       setSearchUserName(value);
-      setUserList([]);
       setErrorText("");
     }
   };
@@ -177,11 +205,41 @@ function CommonDialog({ open, onClose, signOut }) {
         listboxNode.scrollHeight - 1 &&
       hasNextPage
     ) {
-      console.log("Scroll==========================");
+      if (!listboxRef.current) return;
+      const list = listboxRef.current;
       setLoading(true);
+
+      // Save old scroll position & height
+      const oldScrollTop = list.scrollTop;
+      const oldScrollHeight = list.scrollHeight;
       await fetchNextPage();
+
+      requestAnimationFrame(() => {
+        const newScrollHeight = list.scrollHeight;
+        list.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight);
+      });
     }
   };
+
+  const handleUserSelect = (user) => {
+    setSelectedUser(user);
+  };
+
+  const handleRemoveSelectedUser = () => {
+    setSelectedUser(null);
+  };
+
+  const Loader = () => (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        p: 1,
+      }}
+    >
+      <CircularProgress size={20} />
+    </Box>
+  );
 
   return (
     <Dialog open={open} onClose={handleClose}>
@@ -195,34 +253,18 @@ function CommonDialog({ open, onClose, signOut }) {
 
         <form id="subscription-form">
           {!isSignOut && (
-            // <TextField
-            //   autoFocus
-            //   required
-            //   value={searchUserName}
-            //   onChange={handleOnChange}
-            //   margin="dense"
-            //   id="userName"
-            //   name="userName"
-            //   // label="User Name"
-            //   placeholder="Search user name"
-            //   type="text"
-            //   fullWidth
-            //   variant="standard"
-            //   error={!!errorText}
-            //   helperText={errorText}
-            // />
-
-            <Box sx={{ width: 300 }}>
+            <Box sx={{ width: "100%" }}>
               {!selectedUser ? (
                 <Autocomplete
-                  open={searchUserName?.trim()}
+                  freeSolo
+                  open={!!searchUserName?.trim()}
                   options={userList}
                   getOptionLabel={(option) => option.userName}
-                  onChange={(event, value) => setSelectedUser(value)}
-                  inputValue={searchUserName}
-                  onInputChange={handleOnChange}
+                  onChange={(event, value) => handleUserSelect(value)}
                   disableClearable
                   popupIcon={null}
+                  loading={loading}
+                  loadingText={<Loader />}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -234,6 +276,10 @@ function CommonDialog({ open, onClose, signOut }) {
                       placeholder="Search..."
                       type="text"
                       fullWidth
+                      onChange={(event) => {
+                        handleOnChange(event);
+                      }}
+                      value={searchUserName}
                       variant="standard"
                       InputProps={{
                         ...params.InputProps,
@@ -256,7 +302,6 @@ function CommonDialog({ open, onClose, signOut }) {
                       scrollbarWidth: "none",
                       msOverflowStyle: "none",
                     },
-                    ref: listboxRef,
                   }}
                   renderOption={(props, option) => (
                     <li
@@ -303,27 +348,21 @@ function CommonDialog({ open, onClose, signOut }) {
                     ref
                   ) {
                     return (
-                      <ul {...props} ref={ref}>
+                      <ul {...props} ref={listboxRef}>
                         {props.children}
-                        {loading && userList.length > 9 && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "center",
-                              p: 1,
-                            }}
-                          >
-                            <CircularProgress size={20} />
-                          </Box>
-                        )}
+                        {/* {loading && userList.length > 9 && <Loader />} */}
                       </ul>
                     );
                   })}
                 />
               ) : (
                 <Chip
-                  label={selectedUser.name}
-                  onDelete={() => setSelectedUser(null)}
+                  sx={{ padding: 1, minHeight: "fit-content" }}
+                  avatar={
+                    <UserAvatar name={selectedUser.userName} size={"30px"} />
+                  }
+                  label={selectedUser.userName}
+                  onDelete={handleRemoveSelectedUser}
                   color="primary"
                 />
               )}
