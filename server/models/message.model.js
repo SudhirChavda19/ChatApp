@@ -12,7 +12,7 @@ const messageSchema = new mongoose.Schema(
     },
     roomId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Room",
+      ref: "Rooms",
       required: true,
     },
   },
@@ -21,4 +21,4 @@ const messageSchema = new mongoose.Schema(
 
 messageSchema.index({ roomId: 1, createdAt: -1 });
 
-exports.Message = mongoose.model("Messages", messageSchema);
+module.exports = mongoose.model("Messages", messageSchema);

@@ -9,18 +9,16 @@ export const SocketContextProvider = ({ children }) => {
   const { authUser } = useAuthContext();
   // const [onlineUsers, setOnlineUsers] = useState([]);
 
-  // const userId = !!localStorage.getItem("userId");
-  // console.log('userId :', userId);
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    if (authUser) {
+    if (authUser && userId) {
       const newSocket = io("http://localhost:4000", {
         transports: ["websocket"],
         query: {
-          userId: authUser?.userId,
+          userId: userId,
         },
       });
-      console.log("socket :", newSocket);
 
       setSocket(newSocket);
 

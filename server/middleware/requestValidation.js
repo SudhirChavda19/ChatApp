@@ -89,12 +89,16 @@ const signInValidation = () => [
     .withMessage("new password maximum 30 character long"),
 ];
 
-const searchValidation = () => [
-  query("question").notEmpty().withMessage("enter the question in query"),
+const createRoomValidation = () => [
+    body("senderId").trim().notEmpty().withMessage("Sender Id not found"),
+    body("receiverId").trim().notEmpty().withMessage("Receiver Id not found")
+];
+
+const getRoomByUserIdValidation = () => [
+    param("id").trim().notEmpty().withMessage("Id not found"),
 ];
 
 const validate = (req, res, next) => {
-console.log('req ============:', req.body);
   const errors = validationResult(req);
   if (errors.isEmpty()) {
     return next();
@@ -112,4 +116,6 @@ module.exports = {
   signUpValidation,
   signInValidation,
   forgotPasswordValidation,
+  createRoomValidation,
+  getRoomByUserIdValidation
 };

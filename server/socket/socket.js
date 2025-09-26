@@ -45,17 +45,7 @@ io.on("connection", (socket) => {
     socket
       .timeout(2000)
       .to(receiverUserId)
-      .emit("request-to-join-room", { roomId, userData }, (err, res) => {
-        console.log("Receiver acknowledged:", res);
-        if (err) {
-          callback({ status: false });
-        }
-        if (res.length > 0 && res[0].status) {
-          callback({ status: true });
-        } else {
-          callback({ status: false });
-        }
-      });
+      .emit("request-to-join-room", { roomId, userData });
   });
 
   socket.on(
@@ -116,4 +106,4 @@ io.on("connection", (socket) => {
   });
 });
 
-module.exports = { app, server, io };
+module.exports = { app, server, io, getReceiverSocketId };

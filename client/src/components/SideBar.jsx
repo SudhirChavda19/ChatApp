@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   List,
   ListItem,
@@ -49,10 +50,10 @@ import CommonDialog from "./common/CommonDialog";
 import { useSocketContext } from "../context/SocketContext";
 import ListUser from "./ListUser";
 import SnackBar from "./common/SnackBar";
+import { RoomApi } from "../services/roomService";
 
 function SideBar({ getAvailableUsers }) {
-  const [requestedUsers, setRequestedUsers] = useState([]);
-  const [confiremedUsers, setConfiremedUsers] = useState([]);
+  const [userList, setUserList] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [openSignOutDialog, setOpenSignOutDialog] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
@@ -65,6 +66,31 @@ function SideBar({ getAvailableUsers }) {
 
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
+
+  const { isPending, isError, data, error } = useQuery({
+    queryKey: ["users", userId],
+    queryFn: () => RoomApi.GetRooms(userId),
+  });
+
+  useEffect(() => {
+    if (data) {
+      console.log("data :", data);
+      if (data.status === 200 && data.data.data.rooms && data.data.data.rooms.length > 0) {
+        // const userDetail = data.data.data.rooms.filter((room) => {
+        //   room.participants.includes()
+        // })
+        const userDetail = data.data.data.rooms.map((room) => {
+          return room.participants.filter((user) => user._id !== userId)[0]
+        })
+        console.log('userDetail :', userDetail);
+        setUserList(userDetail)
+      }
+    }
+    if(error){
+      console.log("error :", error);
+
+    }
+  }, [data, error]);
 
   // useEffect(() => {
   //   (async () => {
@@ -106,23 +132,11 @@ function SideBar({ getAvailableUsers }) {
   //   })();
   // }, [db]);
 
-  // useEffect(() => {
-  //   socket.on(
-  //     "request-to-join-room",
-  //     async ({ roomId, userData }, callback) => {
-  //       const userObject = {
-  //         id: userData.id,
-  //         name: userData.name,
-  //         roomId,
-  //         requested: true,
-  //         createdAt: Date.now(),
-  //       };
-  //       setRequestedUsers((users) => [...users, userObject]);
-  //       await createUser(userObject, db);
-  //       callback({ status: true });
-  //     }
-  //   );
-  // }, []);
+  useEffect(() => {
+    socket.on("request-to-join-room", ({ user }) => {
+      setUserList((users) => [...users, user]);
+    });
+  }, [socket]);
 
   // useEffect(() => {
   //   socket.on("request-accepted", ({ roomId, userData }, callback) => {
@@ -147,24 +161,12 @@ function SideBar({ getAvailableUsers }) {
   const handleClickClose = () => {
     setOpenDialog(false);
   };
-  
+
   const handleClickOpenSignOut = () => {
     setOpenSignOutDialog(true);
   };
   const handleClickCloseSignOut = () => {
     setOpenSignOutDialog(false);
-  };
-
-  const handleCopyUserId = async () => {
-    await navigator.clipboard.writeText(userId);
-  };
-
-  const handleTooltipClose = () => {
-    setOpenTooltip(false);
-  };
-
-  const handleTooltipOpen = () => {
-    setOpenTooltip(true);
   };
 
   const handleTabChange = (event, newValue) => {
@@ -217,10 +219,6 @@ function SideBar({ getAvailableUsers }) {
       createdAt: Date.now(),
     };
     updateRequestStatus(id, userObject, db);
-    setRequestedUsers((users) => users.filter((user) => user.id != id));
-    setConfiremedUsers((users) => [...users, userObject]);
-    const updatedUser = [...confiremedUsers, userObject];
-    await getAvailableUsers(updatedUser.length);
   };
 
   const handleSnackBar = (snackBarStatus) => {
@@ -292,8 +290,8 @@ function SideBar({ getAvailableUsers }) {
           </Tooltip>
         </ListItem>
         <Divider component="li" />
-        <ListItem sx={{ padding: "0px", width: "100%" }}>
-          <Tabs
+        <ListItem sx={{ padding: "10px", width: "100%", margin: "0px auto" }}>
+          {/* <Tabs
             value={tabValue}
             onChange={handleTabChange}
             aria-label="icon position tabs example"
@@ -316,37 +314,63 @@ function SideBar({ getAvailableUsers }) {
               label="Requests"
               sx={{ minHeight: 40 }}
             />
-          </Tabs>
+          </Tabs> */}
+          <ListItemIcon sx={{ margin: 0, minWidth: 0, alignItems: "flex-end" }}>
+            <ChatIcon color="primary" />
+          </ListItemIcon>
+          <ListItemText
+            sx={{ ml: 1 }}
+            primary="Chats"
+            primaryTypographyProps={{
+              fontSize: 18,
+              letterSpacing: 0,
+            }}
+          />
         </ListItem>
-        {tabValue === 0 ? (
-          confiremedUsers && confiremedUsers.length > 0 ? (
-            <ListItem>
-              <List
-                dense
-                sx={{
-                  width: "100%",
-                  maxWidth: 360,
-                  bgcolor: "background.paper",
-                  position: "relative",
-                  overflow: "auto",
-                  maxHeight: 350,
-                  padding: 0,
-                  "&::-webkit-scrollbar": {
-                    display: "none",
-                  },
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                }}
-              >
-                {confiremedUsers?.map((user) => {
-                  return <ListUser key={user.id} userData={user} />;
-                })}
-              </List>
-            </ListItem>
-          ) : (
-            <NoDataComponent />
-          )
-        ) : requestedUsers && requestedUsers.length > 0 ? (
+        <Divider variant="middle" component="li" />
+        {/* {tabValue === 0 ? ( */}
+        {userList && userList.length > 0 ? (
+          <ListItem>
+            <List
+              dense
+              sx={{
+                width: "100%",
+                maxWidth: 360,
+                bgcolor: "background.paper",
+                position: "relative",
+                overflow: "auto",
+                maxHeight: 350,
+                padding: 0,
+                "&::-webkit-scrollbar": {
+                  display: "none",
+                },
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
+            >
+              {userList?.map((user) => {
+                return (
+                  <ListUser
+                    key={user._id}
+                    userData={user}
+                    handleAcceptReject={handleAcceptReject}
+                  />
+                );
+              })}
+              <SnackBar
+                setHorizontal={"center"}
+                setVertical={"top"}
+                setOpen={openSnackBar}
+                setMessage={"User Not Connected"}
+                setSeverity={"error"}
+                handleSnackBar={handleSnackBar}
+              />
+            </List>
+          </ListItem>
+        ) : (
+          <NoDataComponent />
+        )}
+        {/* ) : requestedUsers && requestedUsers.length > 0 ? (
           <ListItem>
             <List
               dense
@@ -386,7 +410,7 @@ function SideBar({ getAvailableUsers }) {
           </ListItem>
         ) : (
           <NoDataComponent />
-        )}
+        )} */}
       </List>
       <List
         sx={{

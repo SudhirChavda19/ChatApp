@@ -38,7 +38,7 @@ const searchUser = async (req, res) => {
 
     console.log("totalCount :", totalCount);
 
-    const totalPages = Math.ceil(totalCount[0]?.totalCount / limit);
+    const totalPages = totalCount.length > 0 ? Math.ceil(totalCount[0]?.totalCount / limit): 0 ;
     console.log('totalPages :', totalPages);
     const hasNextPage = page < totalPages;
     console.log('hasNextPage :', hasNextPage);

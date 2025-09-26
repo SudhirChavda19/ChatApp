@@ -1,11 +1,12 @@
 
+const {createUser, getUserByEmail} = require("../dao/user.dao.js")
 const { generateTokenAndSetCookie } = require("../utils/generateToken.js");
 
 const signUp = async (req, res) => {
   try {
     const { userName, email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await getUserByEmail(email)
     console.log("user :", user);
 
     if (user) {
@@ -15,17 +16,8 @@ const signUp = async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = new User({
-      userName,
-      password: hashedPassword,
-      email,
-    });
-
+    const newUser = await createUser({userName, email, password});
     if (newUser) {
-      await newUser.save();
       return res.status(201).json({
         status: "Success",
         message: "User created successfully",
@@ -49,11 +41,10 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("req.body :", req.body);
-    const user = await User.findOne({ email });
+    const user = await getUserByEmail(email)
     console.log("user :", user);
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         status: "Fail",
         message: "User Not Found",
       });
@@ -85,10 +76,10 @@ const signIn = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
-    const user = await User.findOne({ email });
+    const user = await getUserByEmail(email)
     console.log("user :", user);
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         status: "Fail",
         message: "User Not Found",
       });

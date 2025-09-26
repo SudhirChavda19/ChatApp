@@ -26,20 +26,18 @@ import {
   Typography,
 } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
-import { getUserByKey } from "../../services/userDao";
-import { useDBContext } from "../../context/DBContext";
 import { useSocketContext } from "../../context/SocketContext";
 import { AuthApi } from "../../services/authService";
 import { useAuthContext } from "../../context/AuthContext";
 import { UserApi } from "../../services/userService";
 import UserAvatar from "./UserAvatar";
+import { RoomApi } from "../../services/roomService";
 
 function CommonDialog({ open, onClose, signOut }) {
   const [searchUserName, setSearchUserName] = useState("");
   const [debounceInput, setDebounceInput] = useState(null);
   const [isSignOut, setIsSignOut] = useState(false);
-  const [listError, setListError] = useState("");
-  const [errorText, setErrorText] = useState("");
+  const [serverError, setServerError] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userList, setUserList] = useState([]);
@@ -80,6 +78,23 @@ function CommonDialog({ open, onClose, signOut }) {
     refetchOnWindowFocus: false,
   });
 
+  const CreateRequestMutation = useMutation({
+    mutationFn: RoomApi.CreateNewRequest,
+    onError: (error) => {
+      console.log("error :", error);
+      const { message, status } = error.response.data;
+      if (status === "Fail") {
+        setServerError(message);
+      }
+    },
+    onSuccess: (data) => {
+      console.log("data :", data);
+      if (data.status === 201) {
+        handleClose();
+      }
+    },
+  });
+
   useEffect(() => {
     if (signOut) setIsSignOut(true);
   }, [signOut]);
@@ -89,7 +104,7 @@ function CommonDialog({ open, onClose, signOut }) {
     if (data) {
       setUserList((prev) => [
         ...prev,
-        ...data.pages[data.pages.length - 1].data,
+        ...(data.pages[data.pages.length - 1].data.filter((user) => user._id !== userId)),
       ]);
       setLoading(false);
     }
@@ -98,16 +113,14 @@ function CommonDialog({ open, onClose, signOut }) {
 
   useEffect(() => {
     if (searchUserName?.trim() && searchUserName?.trim().length > 1) {
-      setUserList([]);
-      console.log("searchUserName?.trim() :", searchUserName?.trim());
+      queryClient.removeQueries({
+        queryKey: ["search", searchUserName?.trim()],
+        exact: true,
+      });
       setDebounceInput(searchUserName?.trim());
       const timeoutId = setTimeout(() => {
-        console.log("debounceInput :", debounceInput);
         if (debounceInput) {
-          queryClient.removeQueries({
-            queryKey: ["search", debounceInput],
-            exact: true,
-          });
+          setUserList([]);
           (async () => {
             await refetch();
           })();
@@ -117,7 +130,6 @@ function CommonDialog({ open, onClose, signOut }) {
       return () => clearTimeout(timeoutId);
     } else {
       setLoading(false);
-      setListError("No User Found");
     }
   }, [searchUserName]);
 
@@ -125,7 +137,7 @@ function CommonDialog({ open, onClose, signOut }) {
     setSearchUserName("");
     setDebounceInput(null);
     setSelectedUser(null);
-    setErrorText("");
+    setServerError("");
     setUserList([]);
     onClose();
   };
@@ -150,13 +162,11 @@ function CommonDialog({ open, onClose, signOut }) {
     },
   });
 
-  const handleOnChange = async (e, newValue, reason) => {
-    e.preventDefault();
+  const handleOnChange = async (value, reason) => {
     if (reason !== "reset" && reason !== "blur") {
-      const value = e.target.value;
       setLoading(true);
       setSearchUserName(value);
-      setErrorText("");
+      setServerError("");
     }
   };
 
@@ -186,9 +196,18 @@ function CommonDialog({ open, onClose, signOut }) {
     event.preventDefault();
     if (isSignOut) {
       signOutMutation.mutate();
+    } else {
+      console.log("selectedUser ---------:", selectedUser);
+      if (selectedUser) {
+        CreateRequestMutation.mutate({
+          senderId: userId,
+          receiverId: selectedUser._id,
+        });
+        // (async () => {
+        //   await RoomApi.CreateNewRequest({senderId: userId, receiverId: selectedUser._id})
+        // })()
+      }
     }
-    // else {
-    // }
   };
 
   // const loadUsers = async (pageNumber) => {
@@ -226,7 +245,10 @@ function CommonDialog({ open, onClose, signOut }) {
   };
 
   const handleRemoveSelectedUser = () => {
+    console.log("searchUserName :", searchUserName);
     setSelectedUser(null);
+    setServerError("");
+    setSearchUserName(searchUserName);
   };
 
   const Loader = () => (
@@ -257,11 +279,18 @@ function CommonDialog({ open, onClose, signOut }) {
               {!selectedUser ? (
                 <Autocomplete
                   freeSolo
+                  disableClearable={true}
                   open={!!searchUserName?.trim()}
+                  clearOnBlur={false}
+                  onInputChange={(event, value, reason) => {
+                    handleOnChange(value, reason);
+                  }}
+                  inputValue={searchUserName}
                   options={userList}
-                  getOptionLabel={(option) => option.userName}
+                  getOptionLabel={(option) =>
+                    option.userName
+                  }
                   onChange={(event, value) => handleUserSelect(value)}
-                  disableClearable
                   popupIcon={null}
                   loading={loading}
                   loadingText={<Loader />}
@@ -276,19 +305,15 @@ function CommonDialog({ open, onClose, signOut }) {
                       placeholder="Search..."
                       type="text"
                       fullWidth
-                      onChange={(event) => {
-                        handleOnChange(event);
-                      }}
-                      value={searchUserName}
+                      // onChange={(event) => {
+                      //   handleOnChange(event);
+                      // }}
+                      // value={searchUserName}
                       variant="standard"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <>
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      }}
+                      // InputProps={{
+                      //   ...params.InputProps,
+                      //   endAdornment: <>{params.InputProps.endAdornment}</>,
+                      // }}
                     />
                   )}
                   ListboxProps={{
@@ -348,7 +373,23 @@ function CommonDialog({ open, onClose, signOut }) {
                     ref
                   ) {
                     return (
-                      <ul {...props} ref={listboxRef}>
+                      <ul {...props} ref={ref}>
+                        {userList?.length === 0 && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "center",
+                              p: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ lineHeight: 1, marginBottom: "4px" }}
+                            >
+                              No User Found
+                            </Typography>
+                          </Box>
+                        )}
                         {props.children}
                         {/* {loading && userList.length > 9 && <Loader />} */}
                       </ul>

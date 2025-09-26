@@ -59,7 +59,7 @@ function ListUser({ userData, handleAcceptReject }) {
   //       </ListItem>
   //     );
 
-  return user.requested ? (
+  return user.isUserConfirmed ? (
     <ListItem
       sx={{
         backgroundColor: "#f3f3f3", //#b1e0ff
@@ -79,11 +79,11 @@ function ListUser({ userData, handleAcceptReject }) {
         }}
       >
         <ListItemAvatar sx={{ minWidth: "40px", height: "30px" }}>
-          <UserAvatar name={user.name} size={"30px"} />
+          <UserAvatar name={user.userName} size={"30px"} />
         </ListItemAvatar>
         <ListItemText
-          id={`checkbox-list-secondary-label-${user.id}`}
-          primary={`${user.name}`}
+          id={`checkbox-list-secondary-label-${user._id}`}
+          primary={`${user.userName}`}
         />
         <Tooltip title="Accept" placement="top">
           <IconButton
@@ -123,7 +123,7 @@ function ListUser({ userData, handleAcceptReject }) {
         <ListItemAvatar
           sx={{ position: "relative", minWidth: "40px", height: "30px" }}
         >
-          <UserAvatar name={user.name} size={"30px"} />
+          <UserAvatar name={user.userName} size={"30px"} />
           <FiberManualRecordIcon
             sx={{ position: "absolute", width: "0.8rem", left: 17, top: 18 }}
             color={user.online ? "success" : "warning"}
@@ -131,8 +131,8 @@ function ListUser({ userData, handleAcceptReject }) {
           />
         </ListItemAvatar>
         <ListItemText
-          id={`checkbox-list-secondary-label-${user.id}`}
-          primary={`${user.name}`}
+          id={`checkbox-list-secondary-label-${user._id}`}
+          primary={`${user.userName}`}
         />
         {/* <ListItemIcon sx={{ justifyContent: "flex-end" }}>
           
