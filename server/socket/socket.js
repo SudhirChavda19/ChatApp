@@ -40,34 +40,34 @@ io.on("connection", (socket) => {
 
   notifyPresenceChange(userId, true);
 
-  socket.on("create-room", ({ roomId, receiverId, userData }, callback) => {
-    const receiverUserId = getReceiverSocketId(receiverId);
-    socket
-      .timeout(2000)
-      .to(receiverUserId)
-      .emit("request-to-join-room", { roomId, userData });
-  });
+  // socket.on("create-room", ({ roomId, receiverId, userData }, callback) => {
+  //   const receiverUserId = getReceiverSocketId(receiverId);
+  //   socket
+  //     .timeout(2000)
+  //     .to(receiverUserId)
+  //     .emit("request-to-join-room", { roomId, userData });
+  // });
 
-  socket.on(
-    "request-accepted",
-    ({ roomId, receiverId, userData }, callback) => {
-      const receiverUserId = getReceiverSocketId(receiverId);
-      socket
-        .timeout(2000)
-        .to(receiverUserId)
-        .emit("request-accepted", { roomId, userData }, (err, res) => {
-          console.log("Receiver acknowledged: ===========> ", res);
-          if (err) {
-            callback({ status: false });
-          }
-          if (res.length > 0 && res[0].status) {
-            callback({ status: true });
-          } else {
-            callback({ status: false });
-          }
-        });
-    }
-  );
+  // socket.on(
+  //   "request-accepted",
+  //   ({ roomId, receiverId, userData }, callback) => {
+  //     const receiverUserId = getReceiverSocketId(receiverId);
+  //     socket
+  //       .timeout(2000)
+  //       .to(receiverUserId)
+  //       .emit("request-accepted", { roomId, userData }, (err, res) => {
+  //         console.log("Receiver acknowledged: ===========> ", res);
+  //         if (err) {
+  //           callback({ status: false });
+  //         }
+  //         if (res.length > 0 && res[0].status) {
+  //           callback({ status: true });
+  //         } else {
+  //           callback({ status: false });
+  //         }
+  //       });
+  //   }
+  // );
 
   socket.on("online-user", (confiremedUsersId, callback) => {
     watchMap.set(socket.id, confiremedUsersId);

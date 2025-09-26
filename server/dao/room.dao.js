@@ -1,12 +1,12 @@
 const Room = require("../models/room.model");
-const { populate } = require("../models/user.model");
 
 const createRoomDao = async ({ senderId, receiverId }) => {
   try {
     const newRoom = new Room({
       participants: [senderId, receiverId],
-      isUserConfirmed: false,
+      status: "Requested",
       isGroup: false,
+      createdBy: senderId,
     });
     if (newRoom) await newRoom.save();
     return newRoom;
@@ -20,12 +20,30 @@ const createRoomDao = async ({ senderId, receiverId }) => {
 };
 
 const getRoomsByUserId = async (userId) => {
-console.log('userId ----------------:', userId);
+  console.log("userId ----------------:", userId);
   try {
     return await Room.find({ participants: userId }).populate("participants");
-
   } catch (error) {
     console.log("Error in getRoomsByUserId Dao :", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const updateRoomStatusDao = async (roomId, status) => {
+  console.log("status ----------------:", roomId, status);
+  try {
+    return await Room.findByIdAndUpdate(
+      roomId,
+      { status: status ? "Confirmed" : "Rejected" },
+      {
+        new: true,
+      }
+    );
+  } catch (error) {
+    console.log("Error in updateRoomStatusDao Dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -36,4 +54,5 @@ console.log('userId ----------------:', userId);
 module.exports = {
   createRoomDao,
   getRoomsByUserId,
+  updateRoomStatusDao,
 };

@@ -13,10 +13,11 @@ const roomSchema = new mongoose.Schema(
         required: true,
       },
     ],
-    isUserConfirmed: {
+    status: {
       //receiver accept request then true
-      type: Boolean,
-      default: false,
+      type: String,
+      enum: ['Requested', 'Rejected', 'Confirmed'],
+      default: "Requested"
     },
     isGroup: {
       type: Boolean, // false = direct chat, true = group chat
@@ -28,6 +29,7 @@ const roomSchema = new mongoose.Schema(
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Users",
+      required: true,
     },
     updatedAt: {
       type: Date,

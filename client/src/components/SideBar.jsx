@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   List,
   ListItem,
@@ -53,42 +53,67 @@ import SnackBar from "./common/SnackBar";
 import { RoomApi } from "../services/roomService";
 
 function SideBar({ getAvailableUsers }) {
-  const [userList, setUserList] = useState([]);
+  const [roomList, setRoomList] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [openSignOutDialog, setOpenSignOutDialog] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
   const [openSnackBar, setOpenSnackBar] = useState(false);
+  const [isConfirmedUser, setIsConfirmedUser] = useState(false);
   // const [loading, setLoading] = useState(true);
 
   const socket = useSocketContext();
   const db = useDBContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
 
-  const { isPending, isError, data, error } = useQuery({
+  const { isPending, isError, data, error, refetch } = useQuery({
     queryKey: ["users", userId],
     queryFn: () => RoomApi.GetRooms(userId),
+  });
+
+  const RequestUpdate = useMutation({
+    mutationFn: RoomApi.RequestStatusUpdate,
+    onError: (error) => {
+      console.log("error :", error);
+      // const { message, status } = error.response.data;
+      // if (status === "Fail") {
+      //   setServerError(message);
+      // }
+    },
+    onSuccess: async (data) => {
+      console.log("data :", data);
+      if (data.status === 201) {
+        queryClient.removeQueries({
+          queryKey: ["users", userId],
+          exact: true,
+        });
+        await refetch();
+      }
+    },
   });
 
   useEffect(() => {
     if (data) {
       console.log("data :", data);
-      if (data.status === 200 && data.data.data.rooms && data.data.data.rooms.length > 0) {
-        // const userDetail = data.data.data.rooms.filter((room) => {
-        //   room.participants.includes()
-        // })
-        const userDetail = data.data.data.rooms.map((room) => {
-          return room.participants.filter((user) => user._id !== userId)[0]
-        })
-        console.log('userDetail :', userDetail);
-        setUserList(userDetail)
+      if (
+        data.status === 200 &&
+        data.data.data &&
+        data.data.data.length > 0
+      ) {
+        const rooms = data.data.data.map((room) => {
+          // return room.participants.filter((user) => user._id !== userId)[0];
+          return room;
+        });
+        // console.log('userDetail :', userDetail);
+        setRoomList(rooms);
+        // getAvailableUsers();
       }
     }
-    if(error){
+    if (error) {
       console.log("error :", error);
-
     }
   }, [data, error]);
 
@@ -133,8 +158,20 @@ function SideBar({ getAvailableUsers }) {
   // }, [db]);
 
   useEffect(() => {
-    socket.on("request-to-join-room", ({ user }) => {
-      setUserList((users) => [...users, user]);
+    socket.on("request-to-join-room", (data) => {
+    console.log('request-to-join-room :', data);
+      (async () => {
+        await refetch();
+      })
+    });
+  }, [socket]);
+
+  useEffect(() => {
+    socket.on("request-accept-reject", (room) => {
+    console.log('request-accept-reject :', room);
+      (async () => {
+        await refetch();
+      })
     });
   }, [socket]);
 
@@ -169,45 +206,43 @@ function SideBar({ getAvailableUsers }) {
     setOpenSignOutDialog(false);
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabvalue(newValue);
-  };
+  // const handleTabChange = (event, newValue) => {
+  //   setTabvalue(newValue);
+  // };
 
-  const handleAcceptReject = async (isAccepted, { roomId, id, name }) => {
-    const sendUserData = { id: userId, name: userName };
-    if (isAccepted) {
-      socket.timeout(2000).emit(
-        "request-accepted",
-        {
-          roomId,
-          receiverId: id,
-          userData: sendUserData,
-        },
-        (err, res) => {
-          if (res && !res?.status) {
-            setOpenSnackBar(true);
-          } else {
-            onRequestAcceptReject(roomId, id, name);
-          }
-        }
-      );
-    } else {
-      socket.timeout(2000).emit(
-        "request-accepted",
-        {
-          roomId,
-          receiverId: id,
-          userData: sendUserData,
-        },
-        (err, res) => {
-          if (res && !res?.status) {
-            setOpenSnackBar(true);
-          } else {
-            onRequestAcceptReject(roomId, id, name);
-          }
-        }
-      );
-    }
+  const handleAcceptReject = async (isAccepted, roomId, senderId) => {
+    await RequestUpdate.mutate({isAccepted, roomId, senderId});
+
+    // socket.timeout(2000).emit(
+    //   "request-accepted",
+    //   {
+    //     roomId,
+    //     receiverId: id,
+    //     userData: sendUserData,
+    //   },
+    //   (err, res) => {
+    //     if (res && !res?.status) {
+    //       setOpenSnackBar(true);
+    //     } else {
+    //       onRequestAcceptReject(roomId, id, name);
+    //     }
+    //   }
+    // );
+    // socket.timeout(2000).emit(
+    //   "request-accepted",
+    //   {
+    //     roomId,
+    //     receiverId: id,
+    //     userData: sendUserData,
+    //   },
+    //   (err, res) => {
+    //     if (res && !res?.status) {
+    //       setOpenSnackBar(true);
+    //     } else {
+    //       onRequestAcceptReject(roomId, id, name);
+    //     }
+    //   }
+    // );
   };
 
   const onRequestAcceptReject = async (roomId, id, name) => {
@@ -261,7 +296,7 @@ function SideBar({ getAvailableUsers }) {
   return (
     <Box
       sx={{
-        width: "20vw",
+        width: "16vw",
         height: "100%",
         position: "relative",
         // border: "1px solid",
@@ -329,7 +364,7 @@ function SideBar({ getAvailableUsers }) {
         </ListItem>
         <Divider variant="middle" component="li" />
         {/* {tabValue === 0 ? ( */}
-        {userList && userList.length > 0 ? (
+        {roomList && roomList.length > 0 ? (
           <ListItem>
             <List
               dense
@@ -348,11 +383,11 @@ function SideBar({ getAvailableUsers }) {
                 msOverflowStyle: "none",
               }}
             >
-              {userList?.map((user) => {
+              {roomList?.map((room) => {
                 return (
                   <ListUser
-                    key={user._id}
-                    userData={user}
+                    key={room._id}
+                    roomData={room}
                     handleAcceptReject={handleAcceptReject}
                   />
                 );

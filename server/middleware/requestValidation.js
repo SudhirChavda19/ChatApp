@@ -98,6 +98,11 @@ const getRoomByUserIdValidation = () => [
     param("id").trim().notEmpty().withMessage("Id not found"),
 ];
 
+const updateroomStatusValidation = () => [
+    param("id").trim().notEmpty().withMessage("Id not found"),
+    body("status").notEmpty().withMessage("update status not found"),
+];
+
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
@@ -117,5 +122,6 @@ module.exports = {
   signInValidation,
   forgotPasswordValidation,
   createRoomValidation,
-  getRoomByUserIdValidation
+  getRoomByUserIdValidation,
+  updateroomStatusValidation
 };

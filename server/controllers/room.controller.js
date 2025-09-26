@@ -1,4 +1,4 @@
-const { createRoomDao, getRoomsByUserId } = require("../dao/room.dao");
+const { createRoomDao, getRoomsByUserId, updateRoomStatusDao } = require("../dao/room.dao");
 const { getUserById } = require("../dao/user.dao");
 const Room = require("../models/room.model");
 const { getReceiverSocketId, io } = require("../socket/socket");
@@ -21,7 +21,7 @@ const createRoom = async (req, res) => {
     if (newRoom) {
       const receiverUserId = getReceiverSocketId(receiverId);
       if (receiverUserId) {
-        io.to(receiverUserId).emit("request-to-join-room", { user });
+        io.to(receiverUserId).emit("request-to-join-room", { newRoom, user });
       }
       return res.status(201).json({
         status: "Success",
@@ -60,7 +60,7 @@ const GetRoomByUser = async (req, res) => {
     return res.status(200).json({
       status: "Success",
       message: "Fetched Room SuccessFully",
-      data: { rooms },
+      data: rooms,
     });
   } catch (error) {
     console.log("Error in create Room controller", error);
@@ -71,7 +71,41 @@ const GetRoomByUser = async (req, res) => {
   }
 };
 
+const updateRoomStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, senderId } = req.body;
+    console.log('status :', status);
+    console.log('id :', id);
+
+    const room = await updateRoomStatusDao(id, status);
+    console.log("rooms----- :", room);
+    if (!room) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "Issue while update room status",
+      });
+    } else {
+        const receiverUserId = getReceiverSocketId(senderId);
+        if(receiverUserId) io.to(receiverUserId).emit("request-accept-reject", { room });
+        
+        return res.status(201).json({
+            status: "Success",
+            message: "Room Status updated successfully",
+            data: room,
+        });
+    }
+  } catch (error) {
+    console.log("Error in updateRoomStatus controller", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   createRoom,
   GetRoomByUser,
+  updateRoomStatus
 };
