@@ -45,6 +45,7 @@ function ChatBox() {
   const [gifUrl, setgifUrl] = useState(null);
   const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [online, setOnline] = useState(false);
 
   const lastMessageRef = useRef(null);
   const chatRef = useRef(null);
@@ -68,19 +69,11 @@ function ChatBox() {
     }
   }, [id, location.state, navigate]);
 
-  useEffect(() => {
-    (async () => {
-      const messageForRoom = await getRoomMessages(user.roomId, db);
-      console.log('messageForRoom -------------:', messageForRoom);
-      if (messageForRoom && messageForRoom.length > 0) {
-        setAllMessages(messageForRoom);
-        initializedRef.current = true;
-      }
-    })();
-  }, [db, user, id]);
 
   useEffect(() => {
-    socket.emit("join-room", user.roomId);
+    if(user?._id){
+      socket.emit("join-room", user.roomId);
+    }
   }, [user, id, socket]);
 
   useEffect(() => {
@@ -105,6 +98,16 @@ function ChatBox() {
       });
     });
   }, [db, socket]);
+
+  useEffect(() => {
+      if (user?._id) {
+        socket.timeout(2000).emit("is-user-online", user._id, (err, res) => {
+          if (res) {
+            setOnline(res.status);
+          }
+        });
+      }
+    }, [user]);
 
   useEffect(() => {
     socket.on("presence-update", ({ userId, status }) => {
@@ -252,13 +255,13 @@ function ChatBox() {
       {/* Header */}
       <AppBar position="static">
         <Toolbar>
-          <UserAvatar name={user.name} size={"40px"} />
+          <UserAvatar name={user.userName} size={"40px"} />
           <Box>
             <Typography variant="h6" sx={{ ml: 1, lineHeight: 1 }}>
-              {user.name}
+              {user.userName}
             </Typography>
             <Typography sx={{ ml: 1, fontSize: "14px", lineHeight: 1 }}>
-              {user.online ? "online" : "offline"}
+              {online ? "online" : "offline"}
             </Typography>
           </Box>
         </Toolbar>

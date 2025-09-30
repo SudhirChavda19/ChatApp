@@ -23,9 +23,7 @@ const getReceiverSocketId = (receiverId) => {
 
 const notifyPresenceChange = (userId, status) => {
   for (const [socketId, watchList] of watchMap.entries()) {
-    console.log("status :", status);
     if (watchList.includes(userId)) {
-      console.log("userId :", userId);
       io.to(socketId).emit("presence-update", { userId, status });
     }
   }
@@ -69,14 +67,15 @@ io.on("connection", (socket) => {
   //   }
   // );
 
-  socket.on("online-user", (confiremedUsersId, callback) => {
-    watchMap.set(socket.id, confiremedUsersId);
-    const dataSet = new Set(confiremedUsersId);
-    const onlineUsers = Array.from(dataSet)
-      .filter((user) => userSocketMap.has(user))
-      .map((user) => user);
+  socket.on("is-user-online", (userId, callback) => {
+    watchMap.set(socket.id, userId);
+    const dataSet = new Set(userId);
+    // const onlineUsers = Array.from(dataSet)
+    //   .filter((user) => userSocketMap.has(user))
+    //   .map((user) => user);
+    const onlineUsers = userSocketMap.has(userId)
     console.log("onlineUsers :", onlineUsers);
-    callback(onlineUsers);
+    callback({status: onlineUsers});
   });
 
   socket.on("join-room", (roomId) => {

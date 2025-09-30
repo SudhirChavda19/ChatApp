@@ -72,6 +72,10 @@ function SideBar({ getAvailableUsers }) {
   const { isPending, isError, data, error, refetch } = useQuery({
     queryKey: ["users", userId],
     queryFn: () => RoomApi.GetRooms(userId),
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const RequestUpdate = useMutation({
@@ -95,22 +99,41 @@ function SideBar({ getAvailableUsers }) {
     },
   });
 
+  const Removeroom = useMutation({
+    mutationFn: RoomApi.RemoveRoom,
+    onError: (error) => {
+      console.log("error :", error);
+      // const { message, status } = error.response.data;
+      // if (status === "Fail") {
+      //   setServerError(message);
+      // }
+    },
+    onSuccess: async (data) => {
+      console.log("data :", data);
+      if (data.status === 201) {
+        queryClient.removeQueries({
+          queryKey: ["users", userId],
+          exact: true,
+        });
+        await refetch();
+      }
+    },
+  });
+
   useEffect(() => {
     if (data) {
       console.log("data :", data);
-      if (
-        data.status === 200 &&
-        data.data.data &&
-        data.data.data.length > 0
-      ) {
+      if (data.status === 200 && data.data.data && data.data.data.length > 0) {
         const rooms = data.data.data.map((room) => {
-          // return room.participants.filter((user) => user._id !== userId)[0];
           return room;
         });
-        // console.log('userDetail :', userDetail);
         setRoomList(rooms);
         // getAvailableUsers();
+      } else {
+        setRoomList([])
       }
+    } else {
+      setRoomList([]);
     }
     if (error) {
       console.log("error :", error);
@@ -159,19 +182,25 @@ function SideBar({ getAvailableUsers }) {
 
   useEffect(() => {
     socket.on("request-to-join-room", (data) => {
-    console.log('request-to-join-room :', data);
+      queryClient.removeQueries({
+        queryKey: ["users", userId],
+        exact: true,
+      });
       (async () => {
         await refetch();
-      })
+      })();
     });
   }, [socket]);
 
   useEffect(() => {
     socket.on("request-accept-reject", (room) => {
-    console.log('request-accept-reject :', room);
+      queryClient.removeQueries({
+        queryKey: ["users", userId],
+        exact: true,
+      });
       (async () => {
         await refetch();
-      })
+      })();
     });
   }, [socket]);
 
@@ -211,7 +240,7 @@ function SideBar({ getAvailableUsers }) {
   // };
 
   const handleAcceptReject = async (isAccepted, roomId, senderId) => {
-    await RequestUpdate.mutate({isAccepted, roomId, senderId});
+    RequestUpdate.mutate({ isAccepted, roomId, senderId });
 
     // socket.timeout(2000).emit(
     //   "request-accepted",
@@ -245,15 +274,19 @@ function SideBar({ getAvailableUsers }) {
     // );
   };
 
-  const onRequestAcceptReject = async (roomId, id, name) => {
-    const userObject = {
-      id,
-      name,
-      roomId,
-      requested: false,
-      createdAt: Date.now(),
-    };
-    updateRequestStatus(id, userObject, db);
+  // const onRequestAcceptReject = async (roomId, id, name) => {
+  //   const userObject = {
+  //     id,
+  //     name,
+  //     roomId,
+  //     requested: false,
+  //     createdAt: Date.now(),
+  //   };
+  //   updateRequestStatus(id, userObject, db);
+  // };
+
+  const handleRemoveRoom = async (id) => {
+    Removeroom.mutate(id);
   };
 
   const handleSnackBar = (snackBarStatus) => {
@@ -389,6 +422,7 @@ function SideBar({ getAvailableUsers }) {
                     key={room._id}
                     roomData={room}
                     handleAcceptReject={handleAcceptReject}
+                    handleRemoveRoom={handleRemoveRoom}
                   />
                 );
               })}

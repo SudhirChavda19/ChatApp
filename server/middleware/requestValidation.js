@@ -94,7 +94,7 @@ const createRoomValidation = () => [
     body("receiverId").trim().notEmpty().withMessage("Receiver Id not found")
 ];
 
-const getRoomByUserIdValidation = () => [
+const idValidation = () => [
     param("id").trim().notEmpty().withMessage("Id not found"),
 ];
 
@@ -122,6 +122,6 @@ module.exports = {
   signInValidation,
   forgotPasswordValidation,
   createRoomValidation,
-  getRoomByUserIdValidation,
+  idValidation,
   updateroomStatusValidation
 };

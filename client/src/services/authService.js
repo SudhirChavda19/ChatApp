@@ -10,9 +10,9 @@ const axiosClient = axios.create({
 });
 
 export const AuthApi = {
-  SignUpService: (data) => axiosClient.post("/auth/signup", data),
-  SignInService: (data) => axiosWithCredentials.post("/auth/signin", data),
-  ForgotPasswordService: (data) =>
-    axiosClient.post("/auth/forgotpassword", data),
-  SignOutService: () => axiosWithCredentials.post("/auth/signout", {}),
+  SignUpService: async (data) => await axiosClient.post("/auth/signup", data),
+  SignInService: async (data) => await axiosWithCredentials.post("/auth/signin", data),
+  ForgotPasswordService: async (data) =>
+   await axiosClient.post("/auth/forgotpassword", data),
+  SignOutService: async () => await axiosWithCredentials.post("/auth/signout", {}),
 };

@@ -1,4 +1,5 @@
 const Room = require("../models/room.model");
+const mongoose = require("mongoose");
 
 const createRoomDao = async ({ senderId, receiverId }) => {
   try {
@@ -22,7 +23,17 @@ const createRoomDao = async ({ senderId, receiverId }) => {
 const getRoomsByUserId = async (userId) => {
   console.log("userId ----------------:", userId);
   try {
-    return await Room.find({ participants: userId }).populate("participants");
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    return await Room.find({
+      participants: userId,
+      // $or: [
+      //   { createdBy: userObjectId }, // if user created the room, always include
+      //   {
+      //     // createdBy: { $ne: userId }, // if not creator
+      //     status: { $ne: "Rejected" }, // only include if not rejected
+      //   },
+      // ],
+    }).populate("participants");
   } catch (error) {
     console.log("Error in getRoomsByUserId Dao :", error);
     return res.status(500).json({
@@ -51,8 +62,23 @@ const updateRoomStatusDao = async (roomId, status) => {
   }
 };
 
+const deleteRoomById = async (roomId) => {
+  console.log("roomId ----------------:", roomId);
+  try {
+    return await Room.findByIdAndDelete({ _id: roomId });
+   
+  } catch (error) {
+    console.log("Error in deleteRoomById Dao :", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   createRoomDao,
   getRoomsByUserId,
   updateRoomStatusDao,
+  deleteRoomById
 };

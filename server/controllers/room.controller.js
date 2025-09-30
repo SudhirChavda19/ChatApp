@@ -1,4 +1,4 @@
-const { createRoomDao, getRoomsByUserId, updateRoomStatusDao } = require("../dao/room.dao");
+const { createRoomDao, getRoomsByUserId, updateRoomStatusDao, deleteRoomById } = require("../dao/room.dao");
 const { getUserById } = require("../dao/user.dao");
 const Room = require("../models/room.model");
 const { getReceiverSocketId, io } = require("../socket/socket");
@@ -20,8 +20,12 @@ const createRoom = async (req, res) => {
 
     if (newRoom) {
       const receiverUserId = getReceiverSocketId(receiverId);
+      const senderUserId = getReceiverSocketId(senderId);
       if (receiverUserId) {
-        io.to(receiverUserId).emit("request-to-join-room", { newRoom, user });
+        io.to(receiverUserId).emit("request-to-join-room", { newRoom });
+      }
+      if (senderUserId) {
+        io.to(senderUserId).emit("request-to-join-room", { newRoom });
       }
       return res.status(201).json({
         status: "Success",
@@ -49,13 +53,13 @@ const GetRoomByUser = async (req, res) => {
     console.log('id :', id);
 
     const rooms = await getRoomsByUserId(id);
-    console.log("rooms----- :", rooms);
-    if (!rooms) {
-      return res.status(404).json({
-        status: "Fail",
-        message: "No Requests Found",
-      });
-    }
+    console.log("rooms-----+++++++ :", rooms);
+    // if (!rooms) {
+    //   return res.status(404).json({
+    //     status: "Fail",
+    //     message: "No Requests Found",
+    //   });
+    // }
 
     return res.status(200).json({
       status: "Success",
@@ -104,8 +108,36 @@ const updateRoomStatus = async (req, res) => {
   }
 };
 
+const removeRoom = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('id :', id);
+
+    const room = await deleteRoomById(id);
+    console.log('room :::::::::::::::::::', room);
+     if (!room) {
+      console.log("error", "Data Not Found");
+      return res.status(404).json({
+        status: "Fail",
+        message: "Data Not Found",
+      });
+    }
+    return res.status(201).json({
+      status: "Success",
+      message: "Room Deleted Successfully",
+    });
+  } catch (error) {
+    console.log("Error in removeRoom controller", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   createRoom,
   GetRoomByUser,
-  updateRoomStatus
+  updateRoomStatus,
+  removeRoom
 };

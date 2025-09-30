@@ -22,11 +22,12 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { useSocketContext } from "../context/SocketContext";
 import UserAvatar from "./common/UserAvatar";
 
-function ListUser({ roomData, handleAcceptReject }) {
+function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
   const [user, setUser] = useState({});
   const [room, setRoom] = useState({});
   const [selectedUser, setSelectedUser] = useState(false);
   const [showDeleteIcon, setShowDeleteIcon] = useState(false);
+  const [online, setOnline] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
   const socket = useSocketContext();
@@ -48,9 +49,20 @@ function ListUser({ roomData, handleAcceptReject }) {
   }, [room, id]);
 
   useEffect(() => {
+    if (user?._id) {
+      socket.timeout(2000).emit("is-user-online", user._id, (err, res) => {
+        if (res) {
+          setOnline(res.status);
+        }
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
     socket.on("presence-update", ({ userId, status }) => {
+    console.log('status :', status);
       if (user._id === userId) {
-        setUser({ ...user, online: status });
+        setOnline(status);
       }
     });
   }, [socket, user]);
@@ -78,7 +90,9 @@ function ListUser({ roomData, handleAcceptReject }) {
     handleAcceptReject(isAccepted, room._id, room.createdBy);
   };
 
-  const handleDeleteRoom = (roomId) => {};
+  const handleDeleteRoom = (roomId) => {
+    handleRemoveRoom(roomId);
+  };
 
   //   if (!user)
   //     return (
@@ -198,7 +212,7 @@ function ListUser({ roomData, handleAcceptReject }) {
             <UserAvatar name={user.userName} size={"30px"} />
             <FiberManualRecordIcon
               sx={{ position: "absolute", width: "0.8rem", left: 17, top: 18 }}
-              color={user.online ? "success" : "warning"}
+              color={online ? "success" : "warning"}
               fontSize="6px"
             />
           </ListItemAvatar>
