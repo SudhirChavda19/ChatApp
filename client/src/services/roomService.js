@@ -5,12 +5,9 @@ export const RoomApi = {
     return await axiosWithCredentials.post(`/room/createRoom`, data);
   },
   GetRooms: async (id) => {
-    console.log("id :", id);
     return await axiosWithCredentials.get(`/room/getRoomUsers/${id}`);
   },
   RequestStatusUpdate: async ({ isAccepted, roomId, senderId }) => {
-    console.log("senderId :", senderId);
-    
     const id = roomId;
     const status = isAccepted;
     return await axiosWithCredentials.patch(`/room/updateRoomStatus/${id}`, {
@@ -19,7 +16,6 @@ export const RoomApi = {
     });
   },
   RemoveRoom: async (id) => {
-    console.log("id :", id);
     return await axiosWithCredentials.delete(`/room/removeRoom/${id}`);
   },
 };

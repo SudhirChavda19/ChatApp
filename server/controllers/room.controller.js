@@ -8,7 +8,6 @@ const createRoom = async (req, res) => {
     const { senderId, receiverId } = req.body;
 
     const user = await getUserById(receiverId);
-    console.log("user :", user);
     if (!user) {
       return res.status(404).json({
         status: "Fail",
@@ -50,10 +49,8 @@ const createRoom = async (req, res) => {
 const GetRoomByUser = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('id :', id);
 
     const rooms = await getRoomsByUserId(id);
-    console.log("rooms-----+++++++ :", rooms);
     // if (!rooms) {
     //   return res.status(404).json({
     //     status: "Fail",
@@ -79,11 +76,8 @@ const updateRoomStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, senderId } = req.body;
-    console.log('status :', status);
-    console.log('id :', id);
 
     const room = await updateRoomStatusDao(id, status);
-    console.log("rooms----- :", room);
     if (!room) {
       return res.status(400).json({
         status: "Fail",
@@ -111,10 +105,8 @@ const updateRoomStatus = async (req, res) => {
 const removeRoom = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('id :', id);
 
     const room = await deleteRoomById(id);
-    console.log('room :::::::::::::::::::', room);
      if (!room) {
       console.log("error", "Data Not Found");
       return res.status(404).json({

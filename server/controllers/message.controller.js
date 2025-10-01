@@ -5,6 +5,7 @@ const { getReceiverSocketId, io } = require("../socket/socket");
 const sendMessage = async (req, res) => {
   try {
     const { senderId, roomId, message, gifUrl } = req.body;
+    console.log('gifUrl :', gifUrl);
 
     const newMessage = await createMessageDao({
       message,
@@ -47,7 +48,7 @@ const sendMessage = async (req, res) => {
 const GetRoomMessages = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('id param:', id);
+    console.log("id param:", id);
     let { limit, page } = req.query;
     page = Number(page) || 1;
     limit = Number(limit) || 20;
@@ -69,7 +70,9 @@ const GetRoomMessages = async (req, res) => {
     return res.status(200).json({
       status: "Success",
       message: "Messages Fetched SuccessFully",
-      data: { messages, totalPages, hasNextPage },
+      data: messages,
+      totalPages,
+      hasNextPage,
     });
   } catch (error) {
     console.log("Error in GetRoomMessages controller", error);

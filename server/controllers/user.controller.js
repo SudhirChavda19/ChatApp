@@ -36,20 +36,9 @@ const searchUser = async (req, res) => {
       ]),
     ]);
 
-    console.log("totalCount :", totalCount);
-
     const totalPages = totalCount.length > 0 ? Math.ceil(totalCount[0]?.totalCount / limit): 0 ;
-    console.log('totalPages :', totalPages);
     const hasNextPage = page < totalPages;
-    console.log('hasNextPage :', hasNextPage);
 
-    console.log("searchedUsers :", searchedUsers);
-    // if (searchedUsers.length === 0) {
-    //   return res.status(404).json({
-    //     status: "Fail",
-    //     message: "No User Found",
-    //   });
-    // }
     return res.status(200).json({
       status: "Success",
       message: "Users Searched Successfully",

@@ -29,7 +29,7 @@ function MessageBox({ message, handleScroll }) {
         mb: 1,
       }}
     >
-      {message.message && message.gifurl ? (
+      {message.message && message.gifUrl ? (
         <Box
           sx={{
             padding: 0,
@@ -52,9 +52,9 @@ function MessageBox({ message, handleScroll }) {
               borderBottomRightRadius: message.senderId === userId ? 0 : 12,
             }}
           >
-            {message.gifurl && (
+            {message.gifUrl && (
               <img
-                src={message.gifurl}
+                src={message.gifUrl}
                 alt="GIF"
                 style={{
                   borderTopRightRadius: 12,
@@ -128,7 +128,7 @@ function MessageBox({ message, handleScroll }) {
         <Paper
           elevation={3}
           sx={{
-            padding: message.gifurl ? "2px" : "8px",
+            padding: message.gifUrl ? "2px" : "8px",
             maxWidth: "60%",
             bgcolor: message.senderId === userId ? "primary.main" : "white",
             color: message.senderId === userId ? "white" : "black",
@@ -137,9 +137,9 @@ function MessageBox({ message, handleScroll }) {
             borderTopLeftRadius: message.senderId === userId ? 12 : 0,
           }}
         >
-          {message.gifurl && (
+          {message.gifUrl && (
             <img
-              src={message.gifurl}
+              src={message.gifUrl}
               alt="GIF"
               style={{
                 borderTopRightRadius: message.senderId === userId ? 0 : 12,
@@ -183,9 +183,9 @@ function MessageBox({ message, handleScroll }) {
             sx={{
               display: "block",
               marginTop: "4px",
-              marginBottom: message.gifurl ? "4px" : "none",
-              marginLeft: message.senderId === userId ? "none" : (message.gifurl ? "8px" : "none"),
-              marginRight: message.senderId === userId ? (message.gifurl ? "8px" : "none") : "none",
+              marginBottom: message.gifUrl ? "4px" : "none",
+              marginLeft: message.senderId === userId ? "none" : (message.gifUrl ? "8px" : "none"),
+              marginRight: message.senderId === userId ? (message.gifUrl ? "8px" : "none") : "none",
               lineHeight: 1,
               fontSize: "9px",
             }}

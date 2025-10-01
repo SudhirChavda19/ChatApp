@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom"
 import { Box, Typography, Button } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
@@ -9,13 +10,12 @@ import { getConfiremedUsers } from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
 
 
-const NoUserFallback = ({isUsersAvailable}) => {
-console.log('isUsersAvailable :', isUsersAvailable);
+const NoUserFallback = () => {
 
-  const db = useDBContext();
-  const { authUser } = useAuthContext();
   const [openDialog, setOpenDialog] = useState(false);
-  const [confiremedUsers, setConfiremedUsers] = useState([]);
+  const { hasUsers } = useOutletContext();
+
+  const userName = localStorage.getItem("userName");
 
   // useEffect(() => {
   //   (async () => {
@@ -32,7 +32,7 @@ console.log('isUsersAvailable :', isUsersAvailable);
     setOpenDialog(false);
   };
 
-  const Icon = confiremedUsers.length > 0 ? ChatBubbleIcon : ChatBubbleOutlineIcon ;
+  const Icon = hasUsers ? ChatBubbleIcon : ChatBubbleOutlineIcon ;
   return (
     <Box
       sx={{
@@ -60,15 +60,15 @@ console.log('isUsersAvailable :', isUsersAvailable);
       </motion.div>
 
       <Typography variant="h5" sx={{ mt: 3, fontWeight: "bold" }}>
-        {confiremedUsers.length > 0 ? `Hiii 👋 ${authUser.userName} ❄` : "No conversations yet"}
+        {hasUsers ? `Hiii 👋 ${userName} ❄` : "No conversations yet"}
       </Typography>
       <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
-        {confiremedUsers.length > 0
+        {hasUsers
           ? "Select a chat to start messaging"
           : "Looks like you don’t have any users to chat with. Start a new conversation and connect with your team!"}
       </Typography>
 
-      {!(confiremedUsers.length > 0) && (
+      {!(hasUsers) && (
         <div>
           <Button
             variant="contained"

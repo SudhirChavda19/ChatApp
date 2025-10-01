@@ -54,6 +54,8 @@ function ChatBox() {
   const [hasMore, setHasMore] = useState(true);
   const [online, setOnline] = useState(false);
   const [messageError, setMessageError] = useState(null);
+  const [previousScrollHeight, setPreviousScrollHeight] = useState(null);
+  const [removeCache, setRemoveCache] = useState(false);
 
   const lastMessageRef = useRef(null);
   const chatRef = useRef(null);
@@ -67,6 +69,7 @@ function ChatBox() {
   const location = useLocation();
   const navigate = useNavigate();
   const { authUser } = useAuthContext();
+  const queryClient = useQueryClient();
 
   const userId = localStorage.getItem("userId");
 
@@ -80,17 +83,16 @@ function ChatBox() {
     isFetchingNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ["search", room._id],
-    queryFn: ({ pageParam }) =>
-      MessageApi.GetRoomMessages(room._id, pageParam),
+    queryKey: ["roomMessages", room._id],
+    queryFn: ({ pageParam }) => MessageApi.GetRoomMessages(room._id, pageParam),
     initialPageParam: 1,
     getNextPageParam(lastPage, allPages) {
       const { hasNextPage } = lastPage;
       return hasNextPage ? allPages.length + 1 : undefined;
     },
     enabled: !!room._id,
-    // staleTime: 0,
-    // cacheTime: 0,
+    staleTime: 0,
+    cacheTime: 0,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -115,44 +117,88 @@ function ChatBox() {
   useEffect(() => {
     if (!location.state || !location.state?.user) {
       navigate("/chat", { replace: true });
-    } else if (location.state.user) {
+    } else {
+      if (location.state.user ) {
       setUser(location.state.user);
+      }
+      if (location.state.room ) {
       setRoom(location.state.room);
+      setAllMessages([])
+      // setgifUrl(null)
+      queryClient.resetQueries({
+        queryKey: ["roomMessages", location.state.room._id],
+        exact: true,
+      });
+      }
     }
-  }, [id, location.state, navigate]);
+  }, [navigate, location.state]);
 
   useEffect(() => {
     if (room?._id) {
-    console.log('room?._id :', room?._id);
       socket.emit("join-room", room._id);
     }
   }, [room, socket]);
 
-  useEffect(() => {
-    console.log('data :', data);
-    if(data && data.pageParams.length > 0 && data.pages[data.pageParams.length -1].data.data.messages) {
-      const messages = data.pages[data.pageParams.length -1].data.data.messages;
+  // useEffect(() => {
+  //   if (room?._id) {
+  //     console.log("room?._id :", room?._id);
+  //     queryClient.resetQueries({
+  //       queryKey: ["roomMessages", room._id],
+  //       exact: true,
+  //     });
+  //     setRemoveCache(true);
+  //   }
+  // }, [room]);
 
-      // if (messages && messages.length < 20) {
-      //   setHasMore(false);
-      // }
-      // if (!messages || messages?.length === 0) {
-      //   setHasMore(false);
-      //   return;
-      // }
-      setAllMessages((prev) => {
-        const existing = new Set(prev.map((m) => m.id));
-        const filtered = messages.filter((m) => !existing.has(m.id));
-        return [...filtered, ...prev];
-      });
-  
-      // requestAnimationFrame(() => {
-      //   const newScrollHeight = cr.scrollHeight;
-      //   cr.scrollTop = cr.scrollTop + (newScrollHeight - prevScrollHeight);
-      // });
-      // setIsLoadingOlder(false);
+  useEffect(() => {
+    if (
+      data &&
+      data.pageParams.length > 0 &&
+      data.pages[data.pageParams.length - 1].data
+    ) {
+      console.log("data page 1 -------:", data);
+      const messages = data.pages[data.pageParams.length - 1].data;
+
+      if (data.pageParams.length === 1) {
+        initializedRef.current = true;
+        setAllMessages((prev) => {
+          const existing = new Set(prev.map((m) => m._id));
+          const filtered = messages.filter((m) => !existing.has(m._id));
+          return [...filtered, ...prev];
+        });
+        if (!hasNextPage) {
+          setHasMore(false);
+        }
+        setRemoveCache(false);
+      } else if (data.pageParams.length > 1) {
+        const cr = chatRef.current;
+        if (!cr) return;
+
+        if (!hasNextPage) {
+          setHasMore(false);
+        }
+        if (!messages || messages?.length === 0) {
+          setHasMore(false);
+          return;
+        }
+
+        setAllMessages((prev) => {
+          const existing = new Set(prev.map((m) => m._id));
+          const filtered = messages.filter((m) => !existing.has(m._id));
+          return [...filtered, ...prev];
+        });
+        requestAnimationFrame(() => {
+          const newScrollHeight = cr.scrollHeight;
+          cr.scrollTop =
+            cr.scrollTop + (newScrollHeight - previousScrollHeight);
+        });
+        setIsLoadingOlder(false);
+      }
     }
-  }, [data]);
+    if (error) {
+      console.log("error :", error);
+    }
+  }, [data, error]);
 
   useEffect(() => {
     socket.on("send-receive-message", async (data) => {
@@ -194,55 +240,24 @@ function ChatBox() {
     });
   }, [socket, user]);
 
-  // useEffect(() => {
-  //   if (initializedRef.current && data.pageParams.length === 1) {
-  //   console.log('initializedRef.current :', initializedRef.current);
-  //     setTimeout(() => {
-  //       lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-  //       initializedRef.current = false;
-  //     }, 250);
-  //   }
-  // }, [initializedRef, data]);
-
-  
-useEffect(() => {
-  if (
-    initializedRef.current &&
-    data?.pageParams.length === 1 &&
-    allMessages.length > 0 &&
-    lastMessageRef.current
-  ) {
-    // wait until next paint so the DOM is ready
-    requestAnimationFrame(() => {
-      lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-      initializedRef.current = false; // disable after first run
-    });
-  }
-}, [allMessages, data]);
+  useEffect(() => {
+    if (initializedRef.current && lastMessageRef.current) {
+      setTimeout(() => {
+        lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+        initializedRef.current = false;
+      }, 250);
+    }
+  }, [initializedRef.current]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if ((message.trim() || gifUrl) && authUser && user._id) {
-      // const messageObject = {
-      //   roomid: user.roomId,
-      //   message: message.trim() ? message : "",
-      //   gifurl: gifUrl ? gifUrl : "",
-      //   receiverid: user.id,
-      //   id: uniqueId,
-      //   senderid: authUser.userId,
-      //   timestamp: Date.now(),
-      // };
-      console.log("room :", room);
       CreateRequestMutation.mutate({
         senderId: userId,
         roomId: room._id,
         message: message ? message : undefined,
         gifUrl: gifUrl ? gifUrl : undefined,
       });
-
-      // setAllMessages((message) => [...message, messageObject]);
-      // socket.emit("send-private-message", messageObject);
-      // await storeMessages(messageObject, db);
       lastMessageRef.current?.scrollIntoView({ behavior: "auto" });
     }
     setMessage("");
@@ -258,61 +273,31 @@ useEffect(() => {
     const distanceFromTop = cr.scrollTop;
     const distanceFromBottom = cr.scrollHeight - cr.clientHeight - cr.scrollTop;
 
-    // update near bottom flag (used to decide auto-scroll on new message)
     isNearBottomRef.current = distanceFromBottom < 100;
 
-    // if user has scrolled away from bottom, show a small "new messages" indicator later
     if (!isNearBottomRef.current) {
       setShowNewMsgButton(true);
     } else {
       setShowNewMsgButton(false);
     }
     scrollDebounceRef.current = window.setTimeout(() => {
-      // load older when scrolled near top
-      if (distanceFromTop <= 10 && !isLoadingOlder && hasMore) {
+      if (distanceFromTop <= 10 && !isLoadingOlder && hasNextPage && hasMore) {
         loadOlderMessages();
       }
     }, 500);
   };
 
   const loadOlderMessages = async () => {
-    const page = data.pageParams.length;
     const cr = chatRef.current;
     if (!cr) return;
     setIsLoadingOlder(true);
 
-    const prevScrollHeight = cr.scrollHeight;
-    const oldest = allMessages[0];
-    // const beforeTimestamp = oldest ? oldest.timestamp : Date.now();
-
     try {
-      // setTimeout(async () => {
-        // const olderMessages = await getRoomMessages(
-        //   user.roomId,
-        //   db,
-        //   beforeTimestamp
-        // );
+      const prevScrollHeight = cr.scrollHeight;
+      setPreviousScrollHeight(prevScrollHeight);
+      setTimeout(async () => {
         await fetchNextPage();
-        if(data.pageParams.length)
-        if (data && data.length < 20) {
-          setHasMore(false);
-        }
-        if (!olderMessages || olderMessages?.length === 0) {
-          setHasMore(false);
-          return;
-        }
-        setAllMessages((prev) => {
-          const existing = new Set(prev.map((m) => m.id));
-          const filtered = olderMessages.filter((m) => !existing.has(m.id));
-          return [...filtered, ...prev];
-        });
-
-        requestAnimationFrame(() => {
-          const newScrollHeight = cr.scrollHeight;
-          cr.scrollTop = cr.scrollTop + (newScrollHeight - prevScrollHeight);
-        });
-        setIsLoadingOlder(false);
-      // }, 1000);
+      }, 600)
     } catch (error) {
       console.error("error loading older messages", error);
     }
@@ -348,6 +333,7 @@ useEffect(() => {
 
   return (
     <Box
+    key={id}
       sx={{
         position: "relative",
         height: "100%",
@@ -528,7 +514,7 @@ useEffect(() => {
                       resize: "none", // prevent manual resize
                       // overflow: "auto", // enable scrollbar when max height hit
                       maxHeight: "120px", // limit height (~5-6 lines)
-                      lineHeight: "20px", // controls line spacing
+                      lineHeight: "24px", // controls line spacing
                     },
                   }}
                   placeholder="Type a message..."
@@ -592,8 +578,8 @@ useEffect(() => {
                 >
                   <Picker
                     onEmojiClick={onEmojiClick}
-                    width={"260px"}
-                    height={"360px"}
+                    width={"342px"}
+                    height={"400px"}
                     emojiStyle="google"
                   />
                 </Box>

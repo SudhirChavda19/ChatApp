@@ -69,6 +69,7 @@ function CommonDialog({ open, onClose, signOut }) {
     initialPageParam: 1,
     getNextPageParam(lastPage, allPages) {
       const { hasNextPage } = lastPage;
+      console.log('lastPage :', lastPage);
       return hasNextPage ? allPages.length + 1 : undefined;
     },
     enabled: false,
@@ -245,7 +246,6 @@ function CommonDialog({ open, onClose, signOut }) {
   };
 
   const handleRemoveSelectedUser = () => {
-    console.log("searchUserName :", searchUserName);
     setSelectedUser(null);
     setServerError("");
     setSearchUserName(searchUserName);
@@ -398,7 +398,7 @@ function CommonDialog({ open, onClose, signOut }) {
                 />
               ) : (
                 <Chip
-                  sx={{ padding: 1, minHeight: "fit-content" }}
+                  sx={{ padding: "8px", height: "fit-content" }}
                   avatar={
                     <UserAvatar name={selectedUser.userName} size={"30px"} />
                   }

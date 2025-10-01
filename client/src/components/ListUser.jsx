@@ -35,7 +35,6 @@ function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
-    console.log("roomData :", roomData);
     if (roomData) {
       setRoom(roomData);
       setUser(roomData.participants.filter((user) => user._id !== userId)[0]);

@@ -128,7 +128,12 @@ function SideBar({ getAvailableUsers }) {
           return room;
         });
         setRoomList(rooms);
-        // getAvailableUsers();
+        let isConfirmedUserAvailable;
+        rooms.forEach(room => {
+          isConfirmedUserAvailable = room.status === "Confirmed";
+          if(isConfirmedUserAvailable) return;
+        });
+        getAvailableUsers(isConfirmedUserAvailable);
       } else {
         setRoomList([])
       }
@@ -338,7 +343,7 @@ function SideBar({ getAvailableUsers }) {
     >
       <List sx={style}>
         <ListItem>
-          <ListItemIcon sx={{ margin: "6px 0px" }}>
+          <ListItemIcon sx={{ margin: "6px 0px", minWidth: "40px" }}>
             <WorkspacesIcon fontSize="large" color="primary" />
           </ListItemIcon>
           <ListItemText

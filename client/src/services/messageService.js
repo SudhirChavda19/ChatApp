@@ -5,8 +5,8 @@ export const MessageApi = {
     return await axiosWithCredentials.post(`/message/sendMessage`, data);
   },
   GetRoomMessages: async (id, pageParam) => {
-    console.log("id :", id);
-    return await axiosWithCredentials.get(`/message/getMessages/${id}`, {params: { page: pageParam, limit: 20 },});
+    const response = await axiosWithCredentials.get(`/message/getMessages/${id}`, {params: { page: pageParam, limit: 20 },});
+    return response.data;
   },
 //   RequestStatusUpdate: async ({ isAccepted, roomId, senderId }) => {
 //     console.log("senderId :", senderId);
