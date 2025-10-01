@@ -98,6 +98,14 @@ const idValidation = () => [
     param("id").trim().notEmpty().withMessage("Id not found"),
 ];
 
+const sendMessageValidation = () => [
+  body("roomId").trim().notEmpty().withMessage("Room Id not found"),
+  body("senderId").trim().notEmpty().withMessage("senderId Id not found"),
+  body("message")
+    .isLength({ max: 2000 })
+    .withMessage("message maximum 2000 character long"),
+]
+
 const updateroomStatusValidation = () => [
     param("id").trim().notEmpty().withMessage("Id not found"),
     body("status").notEmpty().withMessage("update status not found"),
@@ -123,5 +131,6 @@ module.exports = {
   forgotPasswordValidation,
   createRoomValidation,
   idValidation,
-  updateroomStatusValidation
+  updateroomStatusValidation,
+  sendMessageValidation
 };

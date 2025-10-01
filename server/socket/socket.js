@@ -84,9 +84,9 @@ io.on("connection", (socket) => {
     console.log('Room Joined :', clients);
   });
 
-  socket.on("send-private-message", (data) => {
-    socket.to(data.roomid).emit("receive-private-message", data);
-  });
+  // socket.on("send-private-message", (data) => {
+  //   socket.to(data.roomid).emit("receive-private-message", data);
+  // });
 
   socket.on("new-user", (data) => {
     //Adds the new user to the list of users

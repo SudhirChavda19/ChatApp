@@ -56,7 +56,7 @@ function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
         }
       });
     }
-  }, [user]);
+  }, [user, socket]);
 
   useEffect(() => {
     socket.on("presence-update", ({ userId, status }) => {
@@ -82,7 +82,7 @@ function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
 
   const handleOpenUserChat = () => {
     console.log("handleOpenUserChat :", user);
-    navigate(`/chat/user/${room._id}`, { state: { user } });
+    navigate(`/chat/user/${room._id}`, { state: { user, room } });
     setSelectedUser(room._id === id ? true : false);
   };
 

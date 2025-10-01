@@ -18,14 +18,14 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useAuthContext } from "../context/AuthContext";
 
 function MessageBox({ message, handleScroll }) {
-  const { authUser } = useAuthContext();
-  const { userId } = authUser;
+  // const { authUser } = useAuthContext();
+  const userId = localStorage.getItem("userId");
   return (
     <Box
       onScroll={handleScroll}
       sx={{
         display: "flex",
-        justifyContent: message.senderid === userId ? "flex-end" : "flex-start",
+        justifyContent: message.senderId === userId ? "flex-end" : "flex-start",
         mb: 1,
       }}
     >
@@ -37,7 +37,7 @@ function MessageBox({ message, handleScroll }) {
             flexDirection: "column",
             maxWidth: "60%",
             display: "flex",
-            alignItems: message.senderid === userId ? "flex-end" : "flex-start",
+            alignItems: message.senderId === userId ? "flex-end" : "flex-start",
           }}
         >
           <Paper
@@ -45,11 +45,11 @@ function MessageBox({ message, handleScroll }) {
             sx={{
               padding: "2px",
               width: "fit-content",
-              bgcolor: message.senderid === userId ? "primary.main" : "white",
-              color: message.senderid === userId ? "white" : "black",
+              bgcolor: message.senderId === userId ? "primary.main" : "white",
+              color: message.senderId === userId ? "white" : "black",
               borderRadius: 3,
-              borderBottomLeftRadius: message.senderid === userId ? 12 : 0,
-              borderBottomRightRadius: message.senderid === userId ? 0 : 12,
+              borderBottomLeftRadius: message.senderId === userId ? 12 : 0,
+              borderBottomRightRadius: message.senderId === userId ? 0 : 12,
             }}
           >
             {message.gifurl && (
@@ -59,8 +59,8 @@ function MessageBox({ message, handleScroll }) {
                 style={{
                   borderTopRightRadius: 12,
                   borderTopLeftRadius: 12,
-                  borderBottomLeftRadius: message.senderid === userId ? 12 : 0,
-                  borderBottomRightRadius: message.senderid === userId ? 0 : 12,
+                  borderBottomLeftRadius: message.senderId === userId ? 12 : 0,
+                  borderBottomRightRadius: message.senderId === userId ? 0 : 12,
                   display: "block",
                 }}
               />
@@ -72,11 +72,11 @@ function MessageBox({ message, handleScroll }) {
               marginTop: "2px",
               padding: "8px",
               width: "fit-content",
-              bgcolor: message.senderid === userId ? "primary.main" : "white",
-              color: message.senderid === userId ? "white" : "black",
+              bgcolor: message.senderId === userId ? "primary.main" : "white",
+              color: message.senderId === userId ? "white" : "black",
               borderRadius: 3,
-              borderTopRightRadius: message.senderid === userId ? 0 : 12,
-              borderTopLeftRadius: message.senderid === userId ? 12 : 0,
+              borderTopRightRadius: message.senderId === userId ? 0 : 12,
+              borderTopLeftRadius: message.senderId === userId ? 12 : 0,
             }}
           >
             {message.message && (
@@ -86,7 +86,7 @@ function MessageBox({ message, handleScroll }) {
                   margin: 0,
                   display: "flex",
                   justifyContent:
-                    message.senderid === userId ? "flex-start" : "flex-end",
+                    message.senderId === userId ? "flex-start" : "flex-end",
                 }}
               >
                 <Typography
@@ -108,7 +108,7 @@ function MessageBox({ message, handleScroll }) {
               variant="caption"
               gutterBottom
               margin={0}
-              align={message.senderid === userId ? "right" : "left"}
+              align={message.senderId === userId ? "right" : "left"}
               sx={{
                 display: "block",
                 lineHeight: 1,
@@ -130,11 +130,11 @@ function MessageBox({ message, handleScroll }) {
           sx={{
             padding: message.gifurl ? "2px" : "8px",
             maxWidth: "60%",
-            bgcolor: message.senderid === userId ? "primary.main" : "white",
-            color: message.senderid === userId ? "white" : "black",
+            bgcolor: message.senderId === userId ? "primary.main" : "white",
+            color: message.senderId === userId ? "white" : "black",
             borderRadius: 3,
-            borderTopRightRadius: message.senderid === userId ? 0 : 12,
-            borderTopLeftRadius: message.senderid === userId ? 12 : 0,
+            borderTopRightRadius: message.senderId === userId ? 0 : 12,
+            borderTopLeftRadius: message.senderId === userId ? 12 : 0,
           }}
         >
           {message.gifurl && (
@@ -142,8 +142,8 @@ function MessageBox({ message, handleScroll }) {
               src={message.gifurl}
               alt="GIF"
               style={{
-                borderTopRightRadius: message.senderid === userId ? 0 : 12,
-                borderTopLeftRadius: message.senderid === userId ? 12 : 0,
+                borderTopRightRadius: message.senderId === userId ? 0 : 12,
+                borderTopLeftRadius: message.senderId === userId ? 12 : 0,
                 borderBottomLeftRadius: 12,
                 borderBottomRightRadius: 12,
                 display: "block",
@@ -157,7 +157,7 @@ function MessageBox({ message, handleScroll }) {
                 margin: 0,
                 display: "flex",
                 justifyContent:
-                  message.senderid === userId ? "flex-start" : "flex-end",
+                  message.senderId === userId ? "flex-start" : "flex-end",
               }}
             >
               <Typography
@@ -179,13 +179,13 @@ function MessageBox({ message, handleScroll }) {
             variant="caption"
             margin={0}
             gutterBottom
-            align={message.senderid === userId ? "right" : "left"}
+            align={message.senderId === userId ? "right" : "left"}
             sx={{
               display: "block",
               marginTop: "4px",
               marginBottom: message.gifurl ? "4px" : "none",
-              marginLeft: message.senderid === userId ? "none" : (message.gifurl ? "8px" : "none"),
-              marginRight: message.senderid === userId ? (message.gifurl ? "8px" : "none") : "none",
+              marginLeft: message.senderId === userId ? "none" : (message.gifurl ? "8px" : "none"),
+              marginRight: message.senderId === userId ? (message.gifurl ? "8px" : "none") : "none",
               lineHeight: 1,
               fontSize: "9px",
             }}

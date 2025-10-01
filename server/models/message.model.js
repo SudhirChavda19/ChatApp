@@ -15,10 +15,18 @@ const messageSchema = new mongoose.Schema(
       ref: "Rooms",
       required: true,
     },
-  },
-  { timestamps: true }
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Users",
+      required: true,
+    },
+    timestamp: {
+      type: Number,
+      required: true
+    }
+  }
 );
 
-messageSchema.index({ roomId: 1, createdAt: -1 });
+messageSchema.index({ roomId: 1, timestamps: -1 });
 
 module.exports = mongoose.model("Messages", messageSchema);

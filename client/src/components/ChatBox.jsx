@@ -1,5 +1,10 @@
-import { useEffect, useState, useRef, useContext } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import {
+  useMutation,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   Avatar,
   AppBar,
@@ -34,9 +39,11 @@ import notificationSound from "../assets/notification.mp3";
 import { getRoomMessages, storeMessages } from "../services/messageDao";
 import UserAvatar from "./common/UserAvatar";
 import GIFPicker from "./common/GIFPicker";
+import { MessageApi } from "../services/messageService";
 
 function ChatBox() {
   const [user, setUser] = useState({});
+  const [room, setRoom] = useState({});
   const [message, setMessage] = useState("");
   const [allMessages, setAllMessages] = useState([]);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
@@ -46,6 +53,7 @@ function ChatBox() {
   const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [online, setOnline] = useState(false);
+  const [messageError, setMessageError] = useState(null);
 
   const lastMessageRef = useRef(null);
   const chatRef = useRef(null);
@@ -59,34 +67,103 @@ function ChatBox() {
   const location = useLocation();
   const navigate = useNavigate();
   const { authUser } = useAuthContext();
-  const uniqueId = uuidv4();
+
+  const userId = localStorage.getItem("userId");
+
+  const {
+    data,
+    error,
+    isError,
+    isFetchNextPageError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["search", room._id],
+    queryFn: ({ pageParam }) =>
+      MessageApi.GetRoomMessages(room._id, pageParam),
+    initialPageParam: 1,
+    getNextPageParam(lastPage, allPages) {
+      const { hasNextPage } = lastPage;
+      return hasNextPage ? allPages.length + 1 : undefined;
+    },
+    enabled: !!room._id,
+    // staleTime: 0,
+    // cacheTime: 0,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const CreateRequestMutation = useMutation({
+    mutationFn: MessageApi.SendMessage,
+    onError: (error) => {
+      console.log("error :", error);
+      const { message, status } = error.response.data;
+      if (status === "Fail" && message) {
+        setMessageError(message);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.status === 201) {
+        // setAllMessages((message) => [...message, data]);
+        // lastMessageRef.current?.scrollIntoView({ behavior: "auto" });
+      }
+    },
+  });
 
   useEffect(() => {
     if (!location.state || !location.state?.user) {
       navigate("/chat", { replace: true });
     } else if (location.state.user) {
       setUser(location.state.user);
+      setRoom(location.state.room);
     }
   }, [id, location.state, navigate]);
 
-
   useEffect(() => {
-    if(user?._id){
-      socket.emit("join-room", user.roomId);
+    if (room?._id) {
+    console.log('room?._id :', room?._id);
+      socket.emit("join-room", room._id);
     }
-  }, [user, id, socket]);
+  }, [room, socket]);
 
   useEffect(() => {
-    socket.on("receive-private-message", async (data) => {
+    console.log('data :', data);
+    if(data && data.pageParams.length > 0 && data.pages[data.pageParams.length -1].data.data.messages) {
+      const messages = data.pages[data.pageParams.length -1].data.data.messages;
+
+      // if (messages && messages.length < 20) {
+      //   setHasMore(false);
+      // }
+      // if (!messages || messages?.length === 0) {
+      //   setHasMore(false);
+      //   return;
+      // }
+      setAllMessages((prev) => {
+        const existing = new Set(prev.map((m) => m.id));
+        const filtered = messages.filter((m) => !existing.has(m.id));
+        return [...filtered, ...prev];
+      });
+  
+      // requestAnimationFrame(() => {
+      //   const newScrollHeight = cr.scrollHeight;
+      //   cr.scrollTop = cr.scrollTop + (newScrollHeight - prevScrollHeight);
+      // });
+      // setIsLoadingOlder(false);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    socket.on("send-receive-message", async (data) => {
       // const sound = new Audio(notificationSound);
       // sound.play();
 
       setAllMessages((prev) => {
-        if (prev.some((m) => m.id === data.id)) return prev;
-        data.timestamp = Date.now();
+        if (prev.some((m) => m._id === data._id)) return prev;
         return [...prev, data];
       });
-      await storeMessages(data, db);
+      // await storeMessages(data, db);
 
       requestAnimationFrame(() => {
         if (isNearBottomRef.current) {
@@ -100,14 +177,14 @@ function ChatBox() {
   }, [db, socket]);
 
   useEffect(() => {
-      if (user?._id) {
-        socket.timeout(2000).emit("is-user-online", user._id, (err, res) => {
-          if (res) {
-            setOnline(res.status);
-          }
-        });
-      }
-    }, [user]);
+    if (user?._id) {
+      socket.timeout(2000).emit("is-user-online", user._id, (err, res) => {
+        if (res) {
+          setOnline(res.status);
+        }
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     socket.on("presence-update", ({ userId, status }) => {
@@ -117,31 +194,55 @@ function ChatBox() {
     });
   }, [socket, user]);
 
-  useEffect(() => {
-    if (initializedRef.current) {
-      setTimeout(() => {
-        lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-        initializedRef.current = false;
-      }, 250);
-    }
-  }, [initializedRef, id]);
+  // useEffect(() => {
+  //   if (initializedRef.current && data.pageParams.length === 1) {
+  //   console.log('initializedRef.current :', initializedRef.current);
+  //     setTimeout(() => {
+  //       lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+  //       initializedRef.current = false;
+  //     }, 250);
+  //   }
+  // }, [initializedRef, data]);
+
+  
+useEffect(() => {
+  if (
+    initializedRef.current &&
+    data?.pageParams.length === 1 &&
+    allMessages.length > 0 &&
+    lastMessageRef.current
+  ) {
+    // wait until next paint so the DOM is ready
+    requestAnimationFrame(() => {
+      lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+      initializedRef.current = false; // disable after first run
+    });
+  }
+}, [allMessages, data]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if ((message.trim() || gifUrl) && authUser.userName && user.id) {
-      const messageObject = {
-        roomid: user.roomId,
-        message: message.trim() ? message : "",
-        gifurl: gifUrl ? gifUrl : "",
-        receiverid: user.id,
-        id: uniqueId,
-        senderid: authUser.userId,
-        timestamp: Date.now(),
-      };
+    if ((message.trim() || gifUrl) && authUser && user._id) {
+      // const messageObject = {
+      //   roomid: user.roomId,
+      //   message: message.trim() ? message : "",
+      //   gifurl: gifUrl ? gifUrl : "",
+      //   receiverid: user.id,
+      //   id: uniqueId,
+      //   senderid: authUser.userId,
+      //   timestamp: Date.now(),
+      // };
+      console.log("room :", room);
+      CreateRequestMutation.mutate({
+        senderId: userId,
+        roomId: room._id,
+        message: message ? message : undefined,
+        gifUrl: gifUrl ? gifUrl : undefined,
+      });
 
-      setAllMessages((message) => [...message, messageObject]);
-      socket.emit("send-private-message", messageObject);
-      await storeMessages(messageObject, db);
+      // setAllMessages((message) => [...message, messageObject]);
+      // socket.emit("send-private-message", messageObject);
+      // await storeMessages(messageObject, db);
       lastMessageRef.current?.scrollIntoView({ behavior: "auto" });
     }
     setMessage("");
@@ -175,22 +276,25 @@ function ChatBox() {
   };
 
   const loadOlderMessages = async () => {
+    const page = data.pageParams.length;
     const cr = chatRef.current;
     if (!cr) return;
     setIsLoadingOlder(true);
 
     const prevScrollHeight = cr.scrollHeight;
     const oldest = allMessages[0];
-    const beforeTimestamp = oldest ? oldest.timestamp : Date.now();
+    // const beforeTimestamp = oldest ? oldest.timestamp : Date.now();
 
     try {
-      setTimeout(async () => {
-        const olderMessages = await getRoomMessages(
-          user.roomId,
-          db,
-          beforeTimestamp
-        );
-        if (olderMessages && olderMessages.length < 20) {
+      // setTimeout(async () => {
+        // const olderMessages = await getRoomMessages(
+        //   user.roomId,
+        //   db,
+        //   beforeTimestamp
+        // );
+        await fetchNextPage();
+        if(data.pageParams.length)
+        if (data && data.length < 20) {
           setHasMore(false);
         }
         if (!olderMessages || olderMessages?.length === 0) {
@@ -208,7 +312,7 @@ function ChatBox() {
           cr.scrollTop = cr.scrollTop + (newScrollHeight - prevScrollHeight);
         });
         setIsLoadingOlder(false);
-      }, 1000);
+      // }, 1000);
     } catch (error) {
       console.error("error loading older messages", error);
     }
@@ -297,7 +401,7 @@ function ChatBox() {
         {allMessages && allMessages.length > 0 ? (
           allMessages.map((msg, i) => (
             <div
-              key={msg.id}
+              key={msg._id}
               ref={i === allMessages.length - 1 ? lastMessageRef : null}
             >
               <MessageBox message={msg} />
