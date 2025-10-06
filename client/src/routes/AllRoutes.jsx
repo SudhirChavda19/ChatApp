@@ -15,6 +15,7 @@ import BaseLayout from "../components/BaseLayout";
 import SignIn from "../components/pages/SignIn";
 import ForgotPassword from "../components/pages/ForgotPassword";
 import SignUp from "../components/pages/SignUp";
+import ChatBoxWrapper from "../components/ChatBoxWrapper";
 
 function AllRoutes() {
   return (
@@ -31,7 +32,7 @@ function AllRoutes() {
             <Route element={<ProtectedRoute />}>
               <Route path="chat" element={<Chat />}>
                 <Route index element={<NoUserFallback />} />
-                <Route path="user/:id" element={<ChatBox />} />
+                <Route path="user/:id" element={<ChatBoxWrapper />} />
               </Route>
             </Route>
           </Route>

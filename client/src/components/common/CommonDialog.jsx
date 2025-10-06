@@ -171,28 +171,6 @@ function CommonDialog({ open, onClose, signOut }) {
     }
   };
 
-  // function requestUser(otherUserId) {
-  //   const roomId = [userId, otherUserId].sort().join("_");
-  //   console.log("roomId :", roomId);
-
-  //   socket.timeout(2000).emit(
-  //     "create-room",
-  //     {
-  //       roomId,
-  //       receiverId: otherUserId,
-  //       userData: { id: userId, name: userName },
-  //     },
-  //     (err, res) => {
-  //       console.log("response:  ", res);
-  //       if (!res.status) {
-  //         setErrorText("Invalid User ID or User Not Connected");
-  //       } else {
-  //         handleClose();
-  //       }
-  //     }
-  //   );
-  // }
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (isSignOut) {
@@ -204,19 +182,10 @@ function CommonDialog({ open, onClose, signOut }) {
           senderId: userId,
           receiverId: selectedUser._id,
         });
-        // (async () => {
-        //   await RoomApi.CreateNewRequest({senderId: userId, receiverId: selectedUser._id})
-        // })()
       }
     }
   };
 
-  // const loadUsers = async (pageNumber) => {
-  //   setLoading(true);
-  //   const newUsers = await fetchUsers(pageNumber);
-  //   setUsers((prev) => [...prev, ...newUsers]);
-  //   setLoading(false);
-  // };
 
   const handleScroll = async (event) => {
     const listboxNode = event.currentTarget;

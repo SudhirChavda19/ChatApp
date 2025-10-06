@@ -35,6 +35,25 @@ const getUserById = async (userId) => {
   }
 };
 
+const updateUserById = async (userId, { userName, email }) => {
+console.log('userId :', userId);
+  try {
+    return await User.findByIdAndUpdate(
+      userId,
+      { userName, email },
+      {
+        new: true,
+      }
+    );
+  } catch (error) {
+    console.log("Error in updateUserById dao :", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 const getUserByEmail = async (email) => {
   try {
     return await User.findOne({ email });
@@ -51,4 +70,5 @@ module.exports = {
   createUser,
   getUserById,
   getUserByEmail,
+  updateUserById,
 };

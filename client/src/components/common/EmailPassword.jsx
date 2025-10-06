@@ -49,10 +49,6 @@ function EmailPassword() {
     setPath(location.pathname);
   }, [location]);
 
-  // const db = useDBContext();
-  // const socket = useSocketContext();
-  // const uniqueId = uuidv4();
-
   const signUpMutation = useMutation({
     mutationFn: AuthApi.SignUpService,
     onError: (error) => {

@@ -51,11 +51,13 @@ import { useSocketContext } from "../context/SocketContext";
 import ListUser from "./ListUser";
 import SnackBar from "./common/SnackBar";
 import { RoomApi } from "../services/roomService";
+import Profile from "./Profile";
 
 function SideBar({ getAvailableUsers }) {
   const [roomList, setRoomList] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [openSignOutDialog, setOpenSignOutDialog] = useState(false);
+  const [openProfileDialog, setOpenProfileDialog] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
   const [openSnackBar, setOpenSnackBar] = useState(false);
   const [isConfirmedUser, setIsConfirmedUser] = useState(false);
@@ -129,13 +131,13 @@ function SideBar({ getAvailableUsers }) {
         });
         setRoomList(rooms);
         let isConfirmedUserAvailable;
-        rooms.forEach(room => {
+        rooms.forEach((room) => {
           isConfirmedUserAvailable = room.status === "Confirmed";
-          if(isConfirmedUserAvailable) return;
+          if (isConfirmedUserAvailable) return;
         });
         getAvailableUsers(isConfirmedUserAvailable);
       } else {
-        setRoomList([])
+        setRoomList([]);
       }
     } else {
       setRoomList([]);
@@ -238,6 +240,13 @@ function SideBar({ getAvailableUsers }) {
   };
   const handleClickCloseSignOut = () => {
     setOpenSignOutDialog(false);
+  };
+
+  const handleClickOpenProfile = () => {
+    setOpenProfileDialog(true);
+  };
+  const handleClickCloseProfile = () => {
+    setOpenProfileDialog(false);
   };
 
   // const handleTabChange = (event, newValue) => {
@@ -507,12 +516,20 @@ function SideBar({ getAvailableUsers }) {
           }}
         >
           <ListItem sx={{ padding: 0, borderRadius: "12px" }}>
-            <ListItemButton sx={{ padding: "6px 10px", borderRadius: "12px" }}>
+            <ListItemButton
+              sx={{ padding: "6px 10px", borderRadius: "12px" }}
+              onClick={handleClickOpenProfile}
+            >
               <ListItemIcon sx={{ minWidth: "34px" }}>
                 <AccountBoxIcon color="primary" />
               </ListItemIcon>
               <ListItemText primary="Profile" />
             </ListItemButton>
+            {openProfileDialog &&  <Profile
+              open={openProfileDialog}
+              onClose={handleClickCloseProfile}
+              signOut={true}
+            />}
           </ListItem>
         </Box>
         <Divider variant="middle" component="li" />

@@ -111,6 +111,27 @@ const updateroomStatusValidation = () => [
     body("status").notEmpty().withMessage("update status not found"),
 ];
 
+const userUpdateValidation = () => [
+  body()
+    .custom((value, { req }) => Object.keys(req.body).length !== 0)
+    .withMessage("Data Not found"),
+  check("userName").exists().withMessage("user name can't be null"),
+  body("userName")
+    .trim()
+    .notEmpty()
+    .withMessage("user name can't be empty")
+    .isLength({ min: 4 })
+    .withMessage("user name must be atleast 4 character long")
+    .isLength({ max: 30 })
+    .withMessage("user name maximum 30 character long"),
+  body("email")
+    .notEmpty()
+    .withMessage("email adress can't be empty")
+    .trim()
+    .isEmail()
+    .withMessage("enter valid email adress"),
+];
+
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
@@ -132,5 +153,6 @@ module.exports = {
   createRoomValidation,
   idValidation,
   updateroomStatusValidation,
-  sendMessageValidation
+  sendMessageValidation,
+  userUpdateValidation
 };

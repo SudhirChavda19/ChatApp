@@ -7,4 +7,12 @@ export const UserApi = {
     });
     return response.data;
   },
+  GetUser: async (id) => {
+    return await axiosWithCredentials.get(`/user/getUser/${id}`);
+  },
+  UpdateUser: async ({id, data}) => {
+  console.log('data :', data);
+  console.log('id :', id);
+    return await axiosWithCredentials.patch(`/user/updateUser/${id}`, data);
+  },
 };

@@ -4,6 +4,7 @@ import {
   useMutation,
   useInfiniteQuery,
   useQueryClient,
+  useQuery
 } from "@tanstack/react-query";
 import {
   Avatar,
@@ -40,10 +41,12 @@ import { getRoomMessages, storeMessages } from "../services/messageDao";
 import UserAvatar from "./common/UserAvatar";
 import GIFPicker from "./common/GIFPicker";
 import { MessageApi } from "../services/messageService";
+import { UserApi } from "../services/userService";
 
 function ChatBox() {
   const [user, setUser] = useState({});
-  const [room, setRoom] = useState({});
+  const [stateUserId, setStateUserId] = useState(null);
+  // const [room, setRoom] = useState({});
   const [message, setMessage] = useState("");
   const [allMessages, setAllMessages] = useState([]);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
@@ -53,13 +56,12 @@ function ChatBox() {
   const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [online, setOnline] = useState(false);
-  const [messageError, setMessageError] = useState(null);
+  const [messageServerError, setMessageServerError] = useState(null);
   const [previousScrollHeight, setPreviousScrollHeight] = useState(null);
-  const [removeCache, setRemoveCache] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const [lastMessageRef, setLastMessageRef] = useState(null);
 
-  const lastMessageRef = useRef(null);
   const chatRef = useRef(null);
-  const initializedRef = useRef();
   const isNearBottomRef = useRef(false);
   const scrollDebounceRef = useRef(null);
 
@@ -73,24 +75,41 @@ function ChatBox() {
 
   const userId = localStorage.getItem("userId");
 
+  const { isPending, isError, data: userData, error: userError } = useQuery({
+    queryKey: ["user", stateUserId],
+    queryFn: () => UserApi.GetUser(stateUserId),
+    enabled: !!stateUserId,
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    console.log('stateUserId :', stateUserId);
+    console.log("userdata :", userData);
+    if (userData && userData.data.data) {
+      setUser(userData.data.data)
+    }
+    if (userError) console.log("Error while getting User Data");
+  }, [userData, userError]);
+
   const {
-    data,
-    error,
-    isError,
+    data: messageData,
+    error: messageError,
+    isError: isMessageError,
     isFetchNextPageError,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
-    refetch,
   } = useInfiniteQuery({
-    queryKey: ["roomMessages", room._id],
-    queryFn: ({ pageParam }) => MessageApi.GetRoomMessages(room._id, pageParam),
+    queryKey: ["roomMessages", id],
+    queryFn: ({ pageParam }) => MessageApi.GetRoomMessages(id, pageParam),
     initialPageParam: 1,
     getNextPageParam(lastPage, allPages) {
       const { hasNextPage } = lastPage;
       return hasNextPage ? allPages.length + 1 : undefined;
     },
-    enabled: !!room._id,
+    enabled: !!id,
     staleTime: 0,
     cacheTime: 0,
     refetchOnMount: false,
@@ -103,7 +122,7 @@ function ChatBox() {
       console.log("error :", error);
       const { message, status } = error.response.data;
       if (status === "Fail" && message) {
-        setMessageError(message);
+        setMessageServerError(message);
       }
     },
     onSuccess: (data) => {
@@ -118,59 +137,42 @@ function ChatBox() {
     if (!location.state || !location.state?.user) {
       navigate("/chat", { replace: true });
     } else {
-      if (location.state.user ) {
-      setUser(location.state.user);
+      if (location.state.user) {
+        setStateUserId(location.state.user._id);
       }
-      if (location.state.room ) {
-      setRoom(location.state.room);
-      setAllMessages([])
-      // setgifUrl(null)
       queryClient.resetQueries({
-        queryKey: ["roomMessages", location.state.room._id],
+        queryKey: ["roomMessages", id],
         exact: true,
       });
-      }
     }
-  }, [navigate, location.state]);
+  }, [location.state, id]);
 
   useEffect(() => {
-    if (room?._id) {
-      socket.emit("join-room", room._id);
+    if (id) {
+      socket.emit("join-room", id);
     }
-  }, [room, socket]);
-
-  // useEffect(() => {
-  //   if (room?._id) {
-  //     console.log("room?._id :", room?._id);
-  //     queryClient.resetQueries({
-  //       queryKey: ["roomMessages", room._id],
-  //       exact: true,
-  //     });
-  //     setRemoveCache(true);
-  //   }
-  // }, [room]);
+  }, [id, socket]);
 
   useEffect(() => {
     if (
-      data &&
-      data.pageParams.length > 0 &&
-      data.pages[data.pageParams.length - 1].data
+      messageData &&
+      messageData.pageParams.length > 0 &&
+      messageData.pages[messageData.pageParams.length - 1].data
     ) {
-      console.log("data page 1 -------:", data);
-      const messages = data.pages[data.pageParams.length - 1].data;
+      console.log("messageData page 1 -------:", messageData);
+      const messages = messageData.pages[messageData.pageParams.length - 1].data;
 
-      if (data.pageParams.length === 1) {
-        initializedRef.current = true;
+      if (messageData.pageParams.length === 1) {
         setAllMessages((prev) => {
           const existing = new Set(prev.map((m) => m._id));
           const filtered = messages.filter((m) => !existing.has(m._id));
           return [...filtered, ...prev];
         });
+        setInitialized(true);
         if (!hasNextPage) {
           setHasMore(false);
         }
-        setRemoveCache(false);
-      } else if (data.pageParams.length > 1) {
+      } else if (messageData.pageParams.length > 1) {
         const cr = chatRef.current;
         if (!cr) return;
 
@@ -195,10 +197,10 @@ function ChatBox() {
         setIsLoadingOlder(false);
       }
     }
-    if (error) {
-      console.log("error :", error);
+    if (messageError) {
+      console.log("messageError :", messageError);
     }
-  }, [data, error]);
+  }, [messageData, messageError]);
 
   useEffect(() => {
     socket.on("send-receive-message", async (data) => {
@@ -209,11 +211,10 @@ function ChatBox() {
         if (prev.some((m) => m._id === data._id)) return prev;
         return [...prev, data];
       });
-      // await storeMessages(data, db);
 
       requestAnimationFrame(() => {
         if (isNearBottomRef.current) {
-          lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
+          lastMessageRef.scrollIntoView({ behavior: "smooth" });
           setShowNewMsgButton(false);
         } else {
           setShowNewMsgButton(true);
@@ -223,42 +224,42 @@ function ChatBox() {
   }, [db, socket]);
 
   useEffect(() => {
-    if (user?._id) {
-      socket.timeout(2000).emit("is-user-online", user._id, (err, res) => {
+    if (stateUserId) {
+      socket.timeout(2000).emit("is-user-online", stateUserId, (err, res) => {
         if (res) {
           setOnline(res.status);
         }
       });
     }
-  }, [user]);
+  }, [stateUserId]);
 
   useEffect(() => {
     socket.on("presence-update", ({ userId, status }) => {
-      if (user.id === userId) {
-        setUser({ ...user, online: status });
+      if (stateUserId === userId) {
+        setOnline(status)
       }
     });
-  }, [socket, user]);
+  }, [socket, stateUserId]);
 
   useEffect(() => {
-    if (initializedRef.current && lastMessageRef.current) {
+    if (initialized && lastMessageRef) {
       setTimeout(() => {
-        lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-        initializedRef.current = false;
+        lastMessageRef.scrollIntoView({ behavior: "smooth" });
+        setInitialized(false);
       }, 250);
     }
-  }, [initializedRef.current]);
+  }, [initialized, lastMessageRef]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if ((message.trim() || gifUrl) && authUser && user._id) {
+    if ((message.trim() || gifUrl) && authUser && stateUserId) {
       CreateRequestMutation.mutate({
         senderId: userId,
-        roomId: room._id,
+        roomId: id,
         message: message ? message : undefined,
         gifUrl: gifUrl ? gifUrl : undefined,
       });
-      lastMessageRef.current?.scrollIntoView({ behavior: "auto" });
+      lastMessageRef.scrollIntoView({ behavior: "auto" });
     }
     setMessage("");
     setgifUrl(null);
@@ -297,14 +298,14 @@ function ChatBox() {
       setPreviousScrollHeight(prevScrollHeight);
       setTimeout(async () => {
         await fetchNextPage();
-      }, 600)
+      }, 600);
     } catch (error) {
       console.error("error loading older messages", error);
     }
   };
 
   const jumpToBottom = () => {
-    lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
+    lastMessageRef.scrollIntoView({ behavior: "smooth" });
     setShowNewMsgButton(false);
     isNearBottomRef.current = true;
   };
@@ -323,7 +324,6 @@ function ChatBox() {
   };
 
   const OnGifClick = ({ preview }) => {
-    console.log("gifData------ :", preview);
     setgifUrl(preview.url);
   };
 
@@ -333,7 +333,7 @@ function ChatBox() {
 
   return (
     <Box
-    key={id}
+      key={id}
       sx={{
         position: "relative",
         height: "100%",
@@ -388,7 +388,7 @@ function ChatBox() {
           allMessages.map((msg, i) => (
             <div
               key={msg._id}
-              ref={i === allMessages.length - 1 ? lastMessageRef : null}
+              ref={i === allMessages.length - 1 ? setLastMessageRef : null}
             >
               <MessageBox message={msg} />
             </div>

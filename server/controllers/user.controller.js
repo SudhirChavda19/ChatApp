@@ -1,3 +1,4 @@
+const { getUserById, updateUserById } = require("../dao/user.dao.js");
 const User = require("../models/user.model.js");
 
 const searchUser = async (req, res) => {
@@ -36,7 +37,8 @@ const searchUser = async (req, res) => {
       ]),
     ]);
 
-    const totalPages = totalCount.length > 0 ? Math.ceil(totalCount[0]?.totalCount / limit): 0 ;
+    const totalPages =
+      totalCount.length > 0 ? Math.ceil(totalCount[0]?.totalCount / limit) : 0;
     const hasNextPage = page < totalPages;
 
     return res.status(200).json({
@@ -55,6 +57,60 @@ const searchUser = async (req, res) => {
   }
 };
 
+const getUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await getUserById(id);
+    if (!user) {
+      return res.status(404).json({
+        status: "Fail",
+        message: "User Not Found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "User Fetched Successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.log("Error in getUser controller", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('id :', id);
+    const { userName, email } = req.body;
+    const user = await updateUserById(id, {userName, email});
+    if (!user) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "User Invalid",
+      });
+    }
+
+    return res.status(201).json({
+      status: "Success",
+      message: "User Updated Successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.log("Error in updateUser controller", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
 module.exports = {
   searchUser,
+  getUser,
+  updateUser
 };
