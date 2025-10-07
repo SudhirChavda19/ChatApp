@@ -32,7 +32,7 @@ function AllRoutes() {
             <Route element={<ProtectedRoute />}>
               <Route path="chat" element={<Chat />}>
                 <Route index element={<NoUserFallback />} />
-                <Route path="user/:id" element={<ChatBoxWrapper />} />
+                <Route path="room/:id" element={<ChatBoxWrapper />} />
               </Route>
             </Route>
           </Route>

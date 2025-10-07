@@ -77,7 +77,7 @@ const NoUserFallback = () => {
           >
             Start a Chat
           </Button>
-          <CommonDialog open={openDialog} onClose={handleClickClose} />
+          {openDialog && <CommonDialog open={openDialog} onClose={handleClickClose} />}
         </div>
       )}
     </Box>

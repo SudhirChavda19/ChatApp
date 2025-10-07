@@ -60,7 +60,6 @@ function SideBar({ getAvailableUsers }) {
   const [openProfileDialog, setOpenProfileDialog] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
   const [openSnackBar, setOpenSnackBar] = useState(false);
-  const [isConfirmedUser, setIsConfirmedUser] = useState(false);
   // const [loading, setLoading] = useState(true);
 
   const socket = useSocketContext();
@@ -69,7 +68,6 @@ function SideBar({ getAvailableUsers }) {
   const queryClient = useQueryClient();
 
   const userId = localStorage.getItem("userId");
-  const userName = localStorage.getItem("userName");
 
   const { isPending, isError, data, error, refetch } = useQuery({
     queryKey: ["users", userId],
@@ -368,7 +366,7 @@ function SideBar({ getAvailableUsers }) {
             <IconButton sx={{ minWidth: "24px" }} onClick={handleClickOpen}>
               <PersonAddAltIcon color="primary" />
             </IconButton>
-            <CommonDialog open={openDialog} onClose={handleClickClose} />
+            {openDialog && <CommonDialog open={openDialog} onClose={handleClickClose} confirmedUsers={roomList}/>}
           </Tooltip>
         </ListItem>
         <Divider component="li" />
@@ -555,11 +553,11 @@ function SideBar({ getAvailableUsers }) {
               </ListItemIcon>
               <ListItemText primary="Sign Out" />
             </ListItemButton>
-            <CommonDialog
+            {openSignOutDialog && <CommonDialog
               open={openSignOutDialog}
               onClose={handleClickCloseSignOut}
               signOut={true}
-            />
+            />}
           </ListItem>
         </Box>
         {/* </ClickAwayListener> */}

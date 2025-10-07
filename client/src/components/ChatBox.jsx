@@ -4,7 +4,7 @@ import {
   useMutation,
   useInfiniteQuery,
   useQueryClient,
-  useQuery
+  useQuery,
 } from "@tanstack/react-query";
 import {
   Avatar,
@@ -42,6 +42,7 @@ import UserAvatar from "./common/UserAvatar";
 import GIFPicker from "./common/GIFPicker";
 import { MessageApi } from "../services/messageService";
 import { UserApi } from "../services/userService";
+import SnackBar from "./common/SnackBar";
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -59,7 +60,9 @@ function ChatBox() {
   const [messageServerError, setMessageServerError] = useState(null);
   const [previousScrollHeight, setPreviousScrollHeight] = useState(null);
   const [initialized, setInitialized] = useState(false);
-  const [lastMessageRef, setLastMessageRef] = useState(null);
+  const [openSnackBar, setOpenSnackBar] = useState(false);
+  // const [lastMessageRef, setLastMessageRef] = useState(null);
+  const lastMessageRef = useRef(null);
 
   const chatRef = useRef(null);
   const isNearBottomRef = useRef(false);
@@ -75,7 +78,12 @@ function ChatBox() {
 
   const userId = localStorage.getItem("userId");
 
-  const { isPending, isError, data: userData, error: userError } = useQuery({
+  const {
+    isPending,
+    isError,
+    data: userData,
+    error: userError,
+  } = useQuery({
     queryKey: ["user", stateUserId],
     queryFn: () => UserApi.GetUser(stateUserId),
     enabled: !!stateUserId,
@@ -86,10 +94,9 @@ function ChatBox() {
   });
 
   useEffect(() => {
-    console.log('stateUserId :', stateUserId);
     console.log("userdata :", userData);
     if (userData && userData.data.data) {
-      setUser(userData.data.data)
+      setUser(userData.data.data);
     }
     if (userError) console.log("Error while getting User Data");
   }, [userData, userError]);
@@ -98,6 +105,7 @@ function ChatBox() {
     data: messageData,
     error: messageError,
     isError: isMessageError,
+    refetch: messageRefetch,
     isFetchNextPageError,
     fetchNextPage,
     hasNextPage,
@@ -109,7 +117,7 @@ function ChatBox() {
       const { hasNextPage } = lastPage;
       return hasNextPage ? allPages.length + 1 : undefined;
     },
-    enabled: !!id,
+    enabled: false,
     staleTime: 0,
     cacheTime: 0,
     refetchOnMount: false,
@@ -144,6 +152,7 @@ function ChatBox() {
         queryKey: ["roomMessages", id],
         exact: true,
       });
+      messageRefetch()
     }
   }, [location.state, id]);
 
@@ -160,7 +169,8 @@ function ChatBox() {
       messageData.pages[messageData.pageParams.length - 1].data
     ) {
       console.log("messageData page 1 -------:", messageData);
-      const messages = messageData.pages[messageData.pageParams.length - 1].data;
+      const messages =
+        messageData.pages[messageData.pageParams.length - 1].data;
 
       if (messageData.pageParams.length === 1) {
         setAllMessages((prev) => {
@@ -214,7 +224,7 @@ function ChatBox() {
 
       requestAnimationFrame(() => {
         if (isNearBottomRef.current) {
-          lastMessageRef.scrollIntoView({ behavior: "smooth" });
+          lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
           setShowNewMsgButton(false);
         } else {
           setShowNewMsgButton(true);
@@ -236,15 +246,15 @@ function ChatBox() {
   useEffect(() => {
     socket.on("presence-update", ({ userId, status }) => {
       if (stateUserId === userId) {
-        setOnline(status)
+        setOnline(status);
       }
     });
   }, [socket, stateUserId]);
 
   useEffect(() => {
-    if (initialized && lastMessageRef) {
+    if (initialized && lastMessageRef.current) {
       setTimeout(() => {
-        lastMessageRef.scrollIntoView({ behavior: "smooth" });
+        lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
         setInitialized(false);
       }, 250);
     }
@@ -252,6 +262,11 @@ function ChatBox() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (message.length > 2000) {
+      setOpenSnackBar(true);
+      return;
+    }
+
     if ((message.trim() || gifUrl) && authUser && stateUserId) {
       CreateRequestMutation.mutate({
         senderId: userId,
@@ -259,10 +274,20 @@ function ChatBox() {
         message: message ? message : undefined,
         gifUrl: gifUrl ? gifUrl : undefined,
       });
-      lastMessageRef.scrollIntoView({ behavior: "auto" });
+      lastMessageRef.current.scrollIntoView({ behavior: "auto" });
     }
     setMessage("");
     setgifUrl(null);
+  };
+
+  const handleTypeMessage = (e) => {
+    setMessage(e.target.value);
+  };
+
+  const handleSnackBar = (snackBarStatus) => {
+    if (!snackBarStatus) {
+      setOpenSnackBar(false);
+    }
   };
 
   const handleScroll = async () => {
@@ -305,7 +330,7 @@ function ChatBox() {
   };
 
   const jumpToBottom = () => {
-    lastMessageRef.scrollIntoView({ behavior: "smooth" });
+    lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
     setShowNewMsgButton(false);
     isNearBottomRef.current = true;
   };
@@ -388,7 +413,7 @@ function ChatBox() {
           allMessages.map((msg, i) => (
             <div
               key={msg._id}
-              ref={i === allMessages.length - 1 ? setLastMessageRef : null}
+              ref={i === allMessages.length - 1 ? lastMessageRef : null}
             >
               <MessageBox message={msg} />
             </div>
@@ -523,7 +548,7 @@ function ChatBox() {
                   value={message}
                   multiline
                   maxRows={6}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={handleTypeMessage}
                   onDrop={(e) => e.preventDefault()} // stop URL paste
                   onDragOver={(e) => e.preventDefault()}
                 />
@@ -601,9 +626,25 @@ function ChatBox() {
           >
             <SendIcon color={message.trim() || gifUrl ? "primary" : "light"} />
           </IconButton>
+          <SnackBar
+            setHorizontal={"center"}
+            setVertical={"top"}
+            setOpen={openSnackBar}
+            setMessage={
+              <>
+                <Typography padding={"0px 0px"} variant="h6" component="div">
+                  Your message is too long
+                </Typography>
+                <Typography>Please split over multiple messages.</Typography>
+              </>
+            }
+            setSeverity={"success"}
+            handleSnackBar={handleSnackBar}
+          />
           {showNewMsgButton && (
             <IconButton
               onClick={jumpToBottom}
+              disableRipple
               variant="contained"
               sx={{
                 position: "absolute",

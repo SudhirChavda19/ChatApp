@@ -33,7 +33,7 @@ import { UserApi } from "../../services/userService";
 import UserAvatar from "./UserAvatar";
 import { RoomApi } from "../../services/roomService";
 
-function CommonDialog({ open, onClose, signOut }) {
+function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
   const [searchUserName, setSearchUserName] = useState("");
   const [debounceInput, setDebounceInput] = useState(null);
   const [isSignOut, setIsSignOut] = useState(false);
@@ -41,6 +41,9 @@ function CommonDialog({ open, onClose, signOut }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userList, setUserList] = useState([]);
+  const [confirmedUsersList, setConfirmedUsersList] = useState([]);
+  const [confirmedRoomsId, setConfirmedRoomsId] = useState({});
+  const [isUserConfirmed, setIsUserConfirmed] = useState(false);
 
   const listboxRef = useRef(null);
   const uniqueId = uuidv4();
@@ -51,7 +54,6 @@ function CommonDialog({ open, onClose, signOut }) {
   const queryClient = useQueryClient();
 
   const userId = localStorage.getItem("userId");
-  const userName = localStorage.getItem("userName");
 
   const {
     data,
@@ -69,7 +71,6 @@ function CommonDialog({ open, onClose, signOut }) {
     initialPageParam: 1,
     getNextPageParam(lastPage, allPages) {
       const { hasNextPage } = lastPage;
-      console.log('lastPage :', lastPage);
       return hasNextPage ? allPages.length + 1 : undefined;
     },
     enabled: false,
@@ -89,7 +90,6 @@ function CommonDialog({ open, onClose, signOut }) {
       }
     },
     onSuccess: (data) => {
-      console.log("data :", data);
       if (data.status === 201) {
         handleClose();
       }
@@ -105,7 +105,9 @@ function CommonDialog({ open, onClose, signOut }) {
     if (data) {
       setUserList((prev) => [
         ...prev,
-        ...(data.pages[data.pages.length - 1].data.filter((user) => user._id !== userId)),
+        ...data.pages[data.pages.length - 1].data.filter(
+          (user) => user._id !== userId
+        ),
       ]);
       setLoading(false);
     }
@@ -134,22 +136,12 @@ function CommonDialog({ open, onClose, signOut }) {
     }
   }, [searchUserName]);
 
-  const handleClose = () => {
-    setSearchUserName("");
-    setDebounceInput(null);
-    setSelectedUser(null);
-    setServerError("");
-    setUserList([]);
-    onClose();
-  };
-
   const signOutMutation = useMutation({
     mutationFn: AuthApi.SignOutService,
     onError: (error) => {
       console.log("error :", error.response.data);
     },
     onSuccess: (data) => {
-      console.log("data :", data);
       if (data.status === 200) {
         // const { _id, userName } = data.data.data;
         queryClient.invalidateQueries({ queryKey: ["user", "profile"] });
@@ -162,6 +154,35 @@ function CommonDialog({ open, onClose, signOut }) {
       }
     },
   });
+
+  useEffect(() => {
+    if (confirmedUsers && confirmedUsers.length > 0) {
+      const userIds = confirmedUsers.map((room) => {
+        const user = room.participants.filter(
+          (participant) => participant._id !== userId
+        )[0];
+        return user._id;
+      });
+      let roomIds = {};
+      confirmedUsers.forEach((room) => {
+        const user = room.participants.filter(
+          (participant) => participant._id !== userId
+        )[0];
+        roomIds[user._id] = room._id
+      });
+      setConfirmedRoomsId(roomIds)
+      setConfirmedUsersList(userIds);
+    }
+  }, [confirmedUsers]);
+
+  const handleClose = () => {
+    setSearchUserName("");
+    setDebounceInput(null);
+    setSelectedUser(null);
+    setServerError("");
+    setUserList([]);
+    onClose();
+  };
 
   const handleOnChange = async (value, reason) => {
     if (reason !== "reset" && reason !== "blur") {
@@ -176,8 +197,10 @@ function CommonDialog({ open, onClose, signOut }) {
     if (isSignOut) {
       signOutMutation.mutate();
     } else {
-      console.log("selectedUser ---------:", selectedUser);
-      if (selectedUser) {
+      if (selectedUser && isUserConfirmed) {
+        navigate(`/chat/room/${confirmedRoomsId[selectedUser._id]}`, { state: { user: selectedUser } });
+        handleClose();
+      } else {
         CreateRequestMutation.mutate({
           senderId: userId,
           receiverId: selectedUser._id,
@@ -185,7 +208,6 @@ function CommonDialog({ open, onClose, signOut }) {
       }
     }
   };
-
 
   const handleScroll = async (event) => {
     const listboxNode = event.currentTarget;
@@ -212,12 +234,16 @@ function CommonDialog({ open, onClose, signOut }) {
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
+    if (confirmedUsersList.includes(user._id)) {
+      setIsUserConfirmed(true);
+    }
   };
 
   const handleRemoveSelectedUser = () => {
     setSelectedUser(null);
     setServerError("");
     setSearchUserName(searchUserName);
+    setIsUserConfirmed(false);
   };
 
   const Loader = () => (
@@ -256,9 +282,7 @@ function CommonDialog({ open, onClose, signOut }) {
                   }}
                   inputValue={searchUserName}
                   options={userList}
-                  getOptionLabel={(option) =>
-                    option.userName
-                  }
+                  getOptionLabel={(option) => option.userName}
                   onChange={(event, value) => handleUserSelect(value)}
                   popupIcon={null}
                   loading={loading}
@@ -383,7 +407,11 @@ function CommonDialog({ open, onClose, signOut }) {
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
         <Button type="submit" form="subscription-form" onClick={handleSubmit}>
-          {isSignOut ? "Yes, Continue" : "Request"}
+          {isSignOut
+            ? "Yes, Continue"
+            : isUserConfirmed
+            ? "Continue Chat"
+            : "Request"}
         </Button>
       </DialogActions>
     </Dialog>

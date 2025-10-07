@@ -5,7 +5,6 @@ const { getReceiverSocketId, io } = require("../socket/socket");
 const sendMessage = async (req, res) => {
   try {
     const { senderId, roomId, message, gifUrl } = req.body;
-    console.log('gifUrl :', gifUrl);
 
     const newMessage = await createMessageDao({
       message,
@@ -15,17 +14,7 @@ const sendMessage = async (req, res) => {
     });
 
     if (newMessage) {
-      // const receiverUserId = getReceiverSocketId(receiverId);
-      // const senderUserId = getReceiverSocketId(senderId);
-      // socket.on("send-message", (data) => {
       io.to(roomId).emit("send-receive-message", newMessage);
-      // });
-      // if (receiverUserId) {
-      //   io.to(receiverUserId).emit("request-to-join-room", { newRoom });
-      // }
-      // if (senderUserId) {
-      //   io.to(senderUserId).emit("request-to-join-room", { newRoom });
-      // }
       return res.status(201).json({
         status: "Success",
         newMessage,

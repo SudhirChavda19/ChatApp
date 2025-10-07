@@ -18,6 +18,10 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { useAuthContext } from "../context/AuthContext";
 
 function MessageBox({ message, handleScroll }) {
+
+  const looksLikeCode = (text) =>
+  /[{;}=<>()[\]]/.test(text) || text.includes("function") || text.includes("=>");
+
   // const { authUser } = useAuthContext();
   const userId = localStorage.getItem("userId");
   return (
@@ -95,8 +99,11 @@ function MessageBox({ message, handleScroll }) {
                   gutterBottom
                   sx={{
                     display: "block",
-                    lineHeight: 1,
+                    lineHeight: 1.2,
                     fontSize: "15px",
+                    whiteSpace: "pre-wrap", // 👈 preserves newlines and spaces
+                    // wordBreak: "break-word",
+                    fontFamily: looksLikeCode(message.message) ? "monospace" : "inherit",
                   }}
                 >
                   {message.message}
@@ -166,8 +173,11 @@ function MessageBox({ message, handleScroll }) {
                 gutterBottom
                 sx={{
                   display: "block",
-                  lineHeight: 1,
+                  lineHeight: 1.2,
                   fontSize: "15px",
+                  whiteSpace: "pre-wrap", // 👈 preserves newlines and spaces
+                  wordBreak: "break-word",
+                   fontFamily: looksLikeCode(message.message) ? "monospace" : "inherit",
                 }}
               >
                 {message.message}
@@ -184,8 +194,18 @@ function MessageBox({ message, handleScroll }) {
               display: "block",
               marginTop: "4px",
               marginBottom: message.gifUrl ? "4px" : "none",
-              marginLeft: message.senderId === userId ? "none" : (message.gifUrl ? "8px" : "none"),
-              marginRight: message.senderId === userId ? (message.gifUrl ? "8px" : "none") : "none",
+              marginLeft:
+                message.senderId === userId
+                  ? "none"
+                  : message.gifUrl
+                  ? "8px"
+                  : "none",
+              marginRight:
+                message.senderId === userId
+                  ? message.gifUrl
+                    ? "8px"
+                    : "none"
+                  : "none",
               lineHeight: 1,
               fontSize: "9px",
             }}

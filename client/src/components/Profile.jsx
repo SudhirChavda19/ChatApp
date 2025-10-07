@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  emailValidate,
-  userNameValidate,
-} from "../utils/formValidation";
+import { emailValidate, userNameValidate } from "../utils/formValidation";
 import {
   Button,
   TextField,
@@ -49,7 +46,7 @@ function Profile({ open, onClose }) {
       setUserName(userName);
       setEmail(email);
     }
-    if(error) console.log("Error while getting User Data");
+    if (error) console.log("Error while getting User Data");
   }, [data]);
 
   const updateProfile = useMutation({
@@ -62,8 +59,11 @@ function Profile({ open, onClose }) {
       }
     },
     onSuccess: (data) => {
-      console.log("RES=======: ", data);
-      handleClose();
+      if (data.status === 201 && data.data.data) {
+        const userName = data.data.data.userName;
+        localStorage.setItem("userName", userName);
+        handleClose();
+      }
     },
   });
 

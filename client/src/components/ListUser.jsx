@@ -59,7 +59,6 @@ function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
 
   useEffect(() => {
     socket.on("presence-update", ({ userId, status }) => {
-    console.log('status :', status);
       if (user._id === userId) {
         setOnline(status);
       }
@@ -81,7 +80,7 @@ function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
 
   const handleOpenUserChat = () => {
     console.log("handleOpenUserChat :", user);
-    navigate(`/chat/user/${room._id}`, { state: { user, room } });
+    navigate(`/chat/room/${room._id}`, { state: { user } });
     setSelectedUser(room._id === id ? true : false);
   };
 
