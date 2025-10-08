@@ -214,6 +214,7 @@ function ChatBox() {
 
   useEffect(() => {
     socket.on("send-receive-message", async (data) => {
+    console.log('data :', data);
       // const sound = new Audio(notificationSound);
       // sound.play();
 
@@ -269,6 +270,7 @@ function ChatBox() {
 
     if ((message.trim() || gifUrl) && authUser && stateUserId) {
       CreateRequestMutation.mutate({
+        receiverId: stateUserId,
         senderId: userId,
         roomId: id,
         message: message ? message : undefined,

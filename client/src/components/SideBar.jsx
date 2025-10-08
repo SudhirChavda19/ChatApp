@@ -60,6 +60,7 @@ function SideBar({ getAvailableUsers }) {
   const [openProfileDialog, setOpenProfileDialog] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
   const [openSnackBar, setOpenSnackBar] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
   // const [loading, setLoading] = useState(true);
 
   const socket = useSocketContext();
@@ -123,8 +124,8 @@ function SideBar({ getAvailableUsers }) {
   useEffect(() => {
     if (data) {
       console.log("data :", data);
-      if (data.status === 200 && data.data.data && data.data.data.length > 0) {
-        const rooms = data.data.data.map((room) => {
+      if (data.status === 200 && data.data.data.rooms && data.data.data.rooms.length > 0) {
+        const rooms = data.data.data.rooms.map((room) => {
           return room;
         });
         setRoomList(rooms);
@@ -137,6 +138,9 @@ function SideBar({ getAvailableUsers }) {
       } else {
         setRoomList([]);
       }
+      if(data.status === 200 && data.data.data.unreadCounts){
+        setUnreadCounts(data.data.data.unreadCounts);
+      }
     } else {
       setRoomList([]);
     }
@@ -145,48 +149,8 @@ function SideBar({ getAvailableUsers }) {
     }
   }, [data, error]);
 
-  // useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       let [requestedUsersData, confiremedUsersData] = await Promise.all([
-  //         getRequestedUsers(db),
-  //         getConfiremedUsers(db),
-  //       ]);
-  //       console.log("requestedUsers :", requestedUsersData);
-  //       console.log("confiremedUsers :", confiremedUsersData);
-  //       if (requestedUsersData.length > 0)
-  //         setRequestedUsers(requestedUsersData);
-
-  //       const confiremedUsersId = confiremedUsersData.map((user) => user.id);
-  //       if (confiremedUsersId.length > 0) {
-  //         socket
-  //           .timeout(2000)
-  //           .emit("online-user", confiremedUsersId, (error, res) => {
-  //             console.log("response: =========", res);
-  //             if (res.length > 0) {
-  //               setConfiremedUsers(
-  //                 confiremedUsersData.map((user) => {
-  //                   if (res.includes(user.id)) {
-  //                     return { ...user, online: true };
-  //                   } else {
-  //                     return { ...user, online: false };
-  //                   }
-  //                 })
-  //               );
-  //             } else {
-  //               setConfiremedUsers(confiremedUsersData);
-  //             }
-  //           });
-  //       }
-  //       getAvailableUsers(confiremedUsers?.length || 0);
-  //     } catch (error) {
-  //       console.error("Error fetching users:", error);
-  //     }
-  //   })();
-  // }, [db]);
-
   useEffect(() => {
-    socket.on("request-to-join-room", (data) => {
+    socket.on("request-to-join-room", () => {
       queryClient.removeQueries({
         queryKey: ["users", userId],
         exact: true,
@@ -198,7 +162,7 @@ function SideBar({ getAvailableUsers }) {
   }, [socket]);
 
   useEffect(() => {
-    socket.on("request-accept-reject", (room) => {
+    socket.on("request-accept-reject", () => {
       queryClient.removeQueries({
         queryKey: ["users", userId],
         exact: true,
@@ -209,22 +173,17 @@ function SideBar({ getAvailableUsers }) {
     });
   }, [socket]);
 
-  // useEffect(() => {
-  //   socket.on("request-accepted", ({ roomId, userData }, callback) => {
-  //     const userObject = {
-  //       id: userData.id,
-  //       name: userData.name,
-  //       roomId,
-  //       requested: false,
-  //       createdAt: Date.now(),
-  //     };
-  //     setConfiremedUsers((users) => [...users, userObject]);
-  //     const updatedUser = [...confiremedUsers, userObject];
-  //     getAvailableUsers(updatedUser.length);
-  //     createUser(userObject, db);
-  //     callback({ status: true });
-  //   });
-  // }, []);
+  useEffect(() => {
+    socket.on("updated-room", (updatedRoom) => {
+      console.log("updatedRoom :", updatedRoom);
+      // if(updatedRoom) {
+      //   setRoomList(() => {
+
+      //   });
+      // }
+
+    });
+  }, [socket]);
 
   const handleClickOpen = () => {
     setOpenDialog(true);
@@ -253,49 +212,7 @@ function SideBar({ getAvailableUsers }) {
 
   const handleAcceptReject = async (isAccepted, roomId, senderId) => {
     RequestUpdate.mutate({ isAccepted, roomId, senderId });
-
-    // socket.timeout(2000).emit(
-    //   "request-accepted",
-    //   {
-    //     roomId,
-    //     receiverId: id,
-    //     userData: sendUserData,
-    //   },
-    //   (err, res) => {
-    //     if (res && !res?.status) {
-    //       setOpenSnackBar(true);
-    //     } else {
-    //       onRequestAcceptReject(roomId, id, name);
-    //     }
-    //   }
-    // );
-    // socket.timeout(2000).emit(
-    //   "request-accepted",
-    //   {
-    //     roomId,
-    //     receiverId: id,
-    //     userData: sendUserData,
-    //   },
-    //   (err, res) => {
-    //     if (res && !res?.status) {
-    //       setOpenSnackBar(true);
-    //     } else {
-    //       onRequestAcceptReject(roomId, id, name);
-    //     }
-    //   }
-    // );
   };
-
-  // const onRequestAcceptReject = async (roomId, id, name) => {
-  //   const userObject = {
-  //     id,
-  //     name,
-  //     roomId,
-  //     requested: false,
-  //     createdAt: Date.now(),
-  //   };
-  //   updateRequestStatus(id, userObject, db);
-  // };
 
   const handleRemoveRoom = async (id) => {
     Removeroom.mutate(id);
@@ -344,8 +261,6 @@ function SideBar({ getAvailableUsers }) {
         width: "16vw",
         height: "100%",
         position: "relative",
-        // border: "1px solid",
-        // borderColor: "divider",
       }}
     >
       <List sx={style}>
@@ -366,7 +281,13 @@ function SideBar({ getAvailableUsers }) {
             <IconButton sx={{ minWidth: "24px" }} onClick={handleClickOpen}>
               <PersonAddAltIcon color="primary" />
             </IconButton>
-            {openDialog && <CommonDialog open={openDialog} onClose={handleClickClose} confirmedUsers={roomList}/>}
+            {openDialog && (
+              <CommonDialog
+                open={openDialog}
+                onClose={handleClickClose}
+                confirmedUsers={roomList}
+              />
+            )}
           </Tooltip>
         </ListItem>
         <Divider component="li" />
@@ -435,6 +356,7 @@ function SideBar({ getAvailableUsers }) {
                     roomData={room}
                     handleAcceptReject={handleAcceptReject}
                     handleRemoveRoom={handleRemoveRoom}
+                    unreadCounts={unreadCounts[room._id]}
                   />
                 );
               })}
@@ -523,11 +445,13 @@ function SideBar({ getAvailableUsers }) {
               </ListItemIcon>
               <ListItemText primary="Profile" />
             </ListItemButton>
-            {openProfileDialog &&  <Profile
-              open={openProfileDialog}
-              onClose={handleClickCloseProfile}
-              signOut={true}
-            />}
+            {openProfileDialog && (
+              <Profile
+                open={openProfileDialog}
+                onClose={handleClickCloseProfile}
+                signOut={true}
+              />
+            )}
           </ListItem>
         </Box>
         <Divider variant="middle" component="li" />
@@ -553,11 +477,13 @@ function SideBar({ getAvailableUsers }) {
               </ListItemIcon>
               <ListItemText primary="Sign Out" />
             </ListItemButton>
-            {openSignOutDialog && <CommonDialog
-              open={openSignOutDialog}
-              onClose={handleClickCloseSignOut}
-              signOut={true}
-            />}
+            {openSignOutDialog && (
+              <CommonDialog
+                open={openSignOutDialog}
+                onClose={handleClickCloseSignOut}
+                signOut={true}
+              />
+            )}
           </ListItem>
         </Box>
         {/* </ClickAwayListener> */}

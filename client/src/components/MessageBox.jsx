@@ -100,7 +100,7 @@ function MessageBox({ message, handleScroll }) {
                   sx={{
                     display: "block",
                     lineHeight: 1.2,
-                    fontSize: "15px",
+                    fontSize: "13px",
                     whiteSpace: "pre-wrap", // 👈 preserves newlines and spaces
                     // wordBreak: "break-word",
                     fontFamily: looksLikeCode(message.message) ? "monospace" : "inherit",
@@ -174,7 +174,7 @@ function MessageBox({ message, handleScroll }) {
                 sx={{
                   display: "block",
                   lineHeight: 1.2,
-                  fontSize: "15px",
+                  fontSize: looksLikeCode(message.message) ? "14px" : "15px",
                   whiteSpace: "pre-wrap", // 👈 preserves newlines and spaces
                   wordBreak: "break-word",
                    fontFamily: looksLikeCode(message.message) ? "monospace" : "inherit",

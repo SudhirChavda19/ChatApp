@@ -2,11 +2,8 @@ const Message = require("../models/message.model");
 const mongoose = require("mongoose");
 
 const createMessageDao = async ({ message, gifUrl, roomId, senderId }) => {
-console.log('gifUrl :', gifUrl);
-console.log('senderId :', senderId);
   try {
     const roomObjectId = new mongoose.Types.ObjectId(roomId);
-    console.log("roomObjectId :", roomObjectId);
     const newMessage = new Message({
       message,
       gifUrl,
@@ -28,7 +25,10 @@ console.log('senderId :', senderId);
 const getMessagesByRoom = async (roomId, limit, page) => {
   try {
     const skip = (page - 1) * limit;
-    const messages = await Message.find({ roomId }).sort({ timestamp: -1 }).skip(skip).limit(limit);
+    const messages = await Message.find({ roomId })
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const count = await Message.countDocuments({ roomId });
     const totalPages = Math.ceil(count / limit);

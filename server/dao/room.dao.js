@@ -26,14 +26,16 @@ const getRoomsByUserId = async (userId) => {
     const userObjectId = new mongoose.Types.ObjectId(userId);
     return await Room.find({
       participants: userId,
-      // $or: [
-      //   { createdBy: userObjectId }, // if user created the room, always include
-      //   {
-      //     // createdBy: { $ne: userId }, // if not creator
-      //     status: { $ne: "Rejected" }, // only include if not rejected
-      //   },
-      // ],
-    }).populate("participants");
+      $or: [
+        { createdBy: userObjectId }, // if user created the room, always include
+        {
+          createdBy: { $ne: userId }, // if not creator
+          status: { $ne: "Rejected" }, // only include if not rejected
+        },
+      ],
+    })
+      .populate("participants")
+      .sort({ updatedAt: -1 });
   } catch (error) {
     console.log("Error in getRoomsByUserId Dao :", error);
     return res.status(500).json({
@@ -66,9 +68,26 @@ const deleteRoomById = async (roomId) => {
   console.log("roomId ----------------:", roomId);
   try {
     return await Room.findByIdAndDelete({ _id: roomId });
-   
   } catch (error) {
     console.log("Error in deleteRoomById Dao :", error);
+    return res.status(500).json({
+      status: "Fail",
+      message: "Internal Server Error",
+    });
+  }
+};
+
+const updateRoomOnSendMessage = async (roomId) => {
+  try {
+    return await Room.findByIdAndUpdate(
+      roomId,
+      { updatedAt: Date.now() },
+      {
+        new: true,
+      }
+    );
+  } catch (error) {
+    console.log("Error in updateRoomOnSendMessage Dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -80,5 +99,6 @@ module.exports = {
   createRoomDao,
   getRoomsByUserId,
   updateRoomStatusDao,
-  deleteRoomById
+  deleteRoomById,
+  updateRoomOnSendMessage,
 };

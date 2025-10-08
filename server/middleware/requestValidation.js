@@ -100,7 +100,8 @@ const idValidation = () => [
 
 const sendMessageValidation = () => [
   body("roomId").trim().notEmpty().withMessage("Room Id not found"),
-  body("senderId").trim().notEmpty().withMessage("senderId Id not found"),
+  body("senderId").trim().notEmpty().withMessage("Sender Id not found"),
+  body("receiverId").trim().notEmpty().withMessage("Receive Id not found"),
   body("message")
     .isLength({ max: 2000 })
     .withMessage("message maximum 2000 character long"),

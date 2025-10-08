@@ -1,10 +1,12 @@
 const { getUserById } = require("../dao/user.dao");
 const { createMessageDao, getMessagesByRoom } = require("../dao/message.dao");
 const { getReceiverSocketId, io } = require("../socket/socket");
+const { updateRoomOnSendMessage } = require("../dao/room.dao");
+const { redisClient } = require("../redis/redisClient");
 
 const sendMessage = async (req, res) => {
   try {
-    const { senderId, roomId, message, gifUrl } = req.body;
+    const { senderId, receiverId, roomId, message, gifUrl } = req.body;
 
     const newMessage = await createMessageDao({
       message,
@@ -15,6 +17,22 @@ const sendMessage = async (req, res) => {
 
     if (newMessage) {
       io.to(roomId).emit("send-receive-message", newMessage);
+      const updatedRoom = await updateRoomOnSendMessage(roomId);
+
+      const activeRoom = await redisClient.get(`activeRoom:${receiverId}`);
+      if (activeRoom && activeRoom !== roomId) {
+        await redisClient.hIncrBy(`unread:${receiverId}`, roomId, 1);
+      }
+      if (updatedRoom) {
+        const receiverUserId = getReceiverSocketId(receiverId);
+        const senderUserId = getReceiverSocketId(senderId);
+        io.to(senderUserId)
+          .to(receiverUserId)
+          .emit("updated-room", {
+            updatedRoom,
+            unreadCounts: await redisClient.hGetAll(`unread:${receiverId}`),
+          });
+      }
       return res.status(201).json({
         status: "Success",
         newMessage,
@@ -37,18 +55,15 @@ const sendMessage = async (req, res) => {
 const GetRoomMessages = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("id param:", id);
     let { limit, page } = req.query;
     page = Number(page) || 1;
     limit = Number(limit) || 20;
-    console.log("id :", id);
 
     const { messages, totalPages, hasNextPage } = await getMessagesByRoom(
       id,
       limit,
       page
     );
-    console.log("rooms-----+++++++ :", { messages, totalPages, hasNextPage });
     // if (!rooms) {
     //   return res.status(404).json({
     //     status: "Fail",

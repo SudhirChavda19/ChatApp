@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const express = require("express");
 const { createServer } = require("http");
+const { redisClient } = require("../redis/redisClient");
 
 const app = express();
 const server = createServer(app);
@@ -73,15 +74,18 @@ io.on("connection", (socket) => {
     // const onlineUsers = Array.from(dataSet)
     //   .filter((user) => userSocketMap.has(user))
     //   .map((user) => user);
-    const onlineUsers = userSocketMap.has(userId)
+    const onlineUsers = userSocketMap.has(userId);
     console.log("onlineUsers :", onlineUsers);
-    callback({status: onlineUsers});
+    callback({ status: onlineUsers });
   });
 
-  socket.on("join-room", (roomId) => {
+  socket.on("join-room", async (roomId) => {
     socket.join(roomId);
     const clients = io.sockets.adapter.rooms;
-    console.log('Room Joined :', clients);
+    await redisClient.set(`activeRoom:${userId}`, roomId);
+    // reset unread count for this room
+    await redisClient.hDel(`unread:${userId}`, roomId);
+    console.log("Room Joined :", clients);
   });
 
   // socket.on("send-private-message", (data) => {

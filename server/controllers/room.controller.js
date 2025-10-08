@@ -1,6 +1,7 @@
 const { createRoomDao, getRoomsByUserId, updateRoomStatusDao, deleteRoomById } = require("../dao/room.dao");
 const { getUserById } = require("../dao/user.dao");
 const Room = require("../models/room.model");
+const { redisClient } = require("../redis/redisClient");
 const { getReceiverSocketId, io } = require("../socket/socket");
 
 const createRoom = async (req, res) => {
@@ -51,6 +52,7 @@ const GetRoomByUser = async (req, res) => {
     const { id } = req.params;
 
     const rooms = await getRoomsByUserId(id);
+    console.log('rooms :', rooms);
     // if (!rooms) {
     //   return res.status(404).json({
     //     status: "Fail",
@@ -58,10 +60,17 @@ const GetRoomByUser = async (req, res) => {
     //   });
     // }
 
+    const unreadData = await redisClient.hGetAll(`unread:${id}`);
+    console.log('unreadData :', unreadData);
+    // convert all values to numbers
+    const unreadCounts = Object.fromEntries(
+      Object.entries(unreadData).map(([roomId, count]) => [roomId, Number(count)])
+    );
+
     return res.status(200).json({
       status: "Success",
       message: "Fetched Room SuccessFully",
-      data: rooms,
+      data: {rooms, unreadCounts},
     });
   } catch (error) {
     console.log("Error in create Room controller", error);

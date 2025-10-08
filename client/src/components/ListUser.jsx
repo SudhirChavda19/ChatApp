@@ -14,6 +14,7 @@ import {
   Typography,
   Tooltip,
   Skeleton,
+  Badge,
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -22,12 +23,18 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { useSocketContext } from "../context/SocketContext";
 import UserAvatar from "./common/UserAvatar";
 
-function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
+function ListUser({
+  roomData,
+  handleAcceptReject,
+  handleRemoveRoom,
+  unreadCounts,
+}) {
   const [user, setUser] = useState({});
   const [room, setRoom] = useState({});
   const [selectedUser, setSelectedUser] = useState(false);
   const [showDeleteIcon, setShowDeleteIcon] = useState(false);
   const [online, setOnline] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const { id } = useParams();
   const socket = useSocketContext();
@@ -40,6 +47,10 @@ function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
       setUser(roomData.participants.filter((user) => user._id !== userId)[0]);
     }
   }, [roomData]);
+
+  useEffect(() => {
+    setUnreadCount(unreadCounts);
+  }, [unreadCounts]);
 
   useEffect(() => {
     if (room && id) {
@@ -218,9 +229,9 @@ function ListUser({ roomData, handleAcceptReject, handleRemoveRoom }) {
             id={`checkbox-list-secondary-label-${user._id}`}
             primary={`${user.userName}`}
           />
-          {/* <ListItemIcon sx={{ justifyContent: "flex-end" }}>
-          
-        </ListItemIcon> */}
+          <Box sx={{padding: 0, margin: "auto 10px", }}>
+            <Badge color="primary" badgeContent={unreadCount} max={99} fontSize={"1px"}></Badge>
+          </Box>
         </ListItemButton>
       </ListItem>
     );
