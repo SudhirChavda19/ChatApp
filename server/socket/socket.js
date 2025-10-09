@@ -39,43 +39,10 @@ io.on("connection", (socket) => {
 
   notifyPresenceChange(userId, true);
 
-  // socket.on("create-room", ({ roomId, receiverId, userData }, callback) => {
-  //   const receiverUserId = getReceiverSocketId(receiverId);
-  //   socket
-  //     .timeout(2000)
-  //     .to(receiverUserId)
-  //     .emit("request-to-join-room", { roomId, userData });
-  // });
-
-  // socket.on(
-  //   "request-accepted",
-  //   ({ roomId, receiverId, userData }, callback) => {
-  //     const receiverUserId = getReceiverSocketId(receiverId);
-  //     socket
-  //       .timeout(2000)
-  //       .to(receiverUserId)
-  //       .emit("request-accepted", { roomId, userData }, (err, res) => {
-  //         console.log("Receiver acknowledged: ===========> ", res);
-  //         if (err) {
-  //           callback({ status: false });
-  //         }
-  //         if (res.length > 0 && res[0].status) {
-  //           callback({ status: true });
-  //         } else {
-  //           callback({ status: false });
-  //         }
-  //       });
-  //   }
-  // );
-
   socket.on("is-user-online", (userId, callback) => {
     watchMap.set(socket.id, userId);
     const dataSet = new Set(userId);
-    // const onlineUsers = Array.from(dataSet)
-    //   .filter((user) => userSocketMap.has(user))
-    //   .map((user) => user);
     const onlineUsers = userSocketMap.has(userId);
-    console.log("onlineUsers :", onlineUsers);
     callback({ status: onlineUsers });
   });
 
@@ -83,20 +50,20 @@ io.on("connection", (socket) => {
     socket.join(roomId);
     const clients = io.sockets.adapter.rooms;
     await redisClient.set(`activeRoom:${userId}`, roomId);
-    // reset unread count for this room
     await redisClient.hDel(`unread:${userId}`, roomId);
     console.log("Room Joined :", clients);
   });
 
-  // socket.on("send-private-message", (data) => {
-  //   socket.to(data.roomid).emit("receive-private-message", data);
-  // });
+  socket.on("typing", (roomId) => {
+    socket.to(roomId).emit("display-typing", roomId);
+  });
+
+  socket.on("stop-typing", (roomId) => {
+    socket.to(roomId).emit("hide-typing", roomId);
+  });
 
   socket.on("new-user", (data) => {
-    //Adds the new user to the list of users
     users.push(data);
-    console.log(users);
-    //Sends the list of users to the client
     io.emit("new-user-response", users);
   });
 

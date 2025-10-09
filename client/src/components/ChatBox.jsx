@@ -18,6 +18,7 @@ import {
   CircularProgress,
   ClickAwayListener,
   Paper,
+  Badge,
 } from "@mui/material";
 import Picker from "emoji-picker-react";
 import { motion } from "framer-motion";
@@ -43,6 +44,10 @@ import GIFPicker from "./common/GIFPicker";
 import { MessageApi } from "../services/messageService";
 import { UserApi } from "../services/userService";
 import SnackBar from "./common/SnackBar";
+import { useDispatch, useSelector } from "react-redux";
+import { clearUnread } from "../features/room/roomSlice";
+import { incrementUnread, updateRoom } from "../features/room/roomSlice";
+import TypingIndicator from "./common/TypingIndicator";
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -61,6 +66,9 @@ function ChatBox() {
   const [previousScrollHeight, setPreviousScrollHeight] = useState(null);
   const [initialized, setInitialized] = useState(false);
   const [openSnackBar, setOpenSnackBar] = useState(false);
+  const [unSeenMessageCount, setUnSeenMessageCount] = useState(0);
+  const [userTyping, setUserTyping] = useState(false);
+
   // const [lastMessageRef, setLastMessageRef] = useState(null);
   const lastMessageRef = useRef(null);
 
@@ -68,13 +76,17 @@ function ChatBox() {
   const isNearBottomRef = useRef(false);
   const scrollDebounceRef = useRef(null);
 
+  const showNewMsgButtonRef = useRef(showNewMsgButton);
+  const userTypingRef = useRef(userTyping);
+  const typingTimeoutRef = useRef(null);
+
   const socket = useSocketContext();
-  const db = useDBContext();
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { authUser } = useAuthContext();
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
   const userId = localStorage.getItem("userId");
 
@@ -152,15 +164,25 @@ function ChatBox() {
         queryKey: ["roomMessages", id],
         exact: true,
       });
-      messageRefetch()
+      messageRefetch();
     }
   }, [location.state, id]);
 
   useEffect(() => {
     if (id) {
+      dispatch(clearUnread(id));
       socket.emit("join-room", id);
     }
   }, [id, socket]);
+
+  useEffect(() => {
+    socket.on("updated-room", ({ updatedRoom, unreadCounts }) => {
+      if (updatedRoom._id !== id) {
+        dispatch(incrementUnread({ roomId: updatedRoom._id }));
+      }
+      dispatch(updateRoom(updatedRoom));
+    });
+  }, [socket, id]);
 
   useEffect(() => {
     if (
@@ -213,26 +235,35 @@ function ChatBox() {
   }, [messageData, messageError]);
 
   useEffect(() => {
+    showNewMsgButtonRef.current = showNewMsgButton;
+  }, [showNewMsgButton]);
+
+  useEffect(() => {
     socket.on("send-receive-message", async (data) => {
-    console.log('data :', data);
+      console.log("message ::", data);
       // const sound = new Audio(notificationSound);
       // sound.play();
+      if (id === data.roomId) {
+        setAllMessages((prev) => {
+          if (prev.some((m) => m._id === data._id)) return prev;
+          return [...prev, data];
+        });
 
-      setAllMessages((prev) => {
-        if (prev.some((m) => m._id === data._id)) return prev;
-        return [...prev, data];
-      });
+        if (userId !== data.senderId && userTypingRef.current)
+          setUserTyping(false);
 
-      requestAnimationFrame(() => {
-        if (isNearBottomRef.current) {
-          lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
-          setShowNewMsgButton(false);
+        if (showNewMsgButtonRef.current && userId !== data.senderId) {
+          setUnSeenMessageCount((prev) => prev + 1);
         } else {
-          setShowNewMsgButton(true);
+          setTimeout(() => {
+            if (lastMessageRef.current) {
+              lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+            }
+          }, 50);
         }
-      });
+      }
     });
-  }, [db, socket]);
+  }, [socket]);
 
   useEffect(() => {
     if (stateUserId) {
@@ -251,6 +282,29 @@ function ChatBox() {
       }
     });
   }, [socket, stateUserId]);
+
+  useEffect(() => {
+    socket.on("display-typing", (roomId) => {
+      if (id === roomId && !userTypingRef.current) {
+        if (!showNewMsgButtonRef.current && lastMessageRef.current) {
+          setUserTyping(true);
+          setTimeout(() => {
+            lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
+          }, 50);
+        }
+      }
+    });
+
+    socket.on("hide-typing", (roomId) => {
+      if (id === roomId && userTypingRef.current) {
+        setUserTyping(false);
+      }
+    });
+  }, [socket]);
+
+  useEffect(() => {
+    userTypingRef.current = userTyping;
+  }, [userTyping]);
 
   useEffect(() => {
     if (initialized && lastMessageRef.current) {
@@ -276,7 +330,6 @@ function ChatBox() {
         message: message ? message : undefined,
         gifUrl: gifUrl ? gifUrl : undefined,
       });
-      lastMessageRef.current.scrollIntoView({ behavior: "auto" });
     }
     setMessage("");
     setgifUrl(null);
@@ -284,6 +337,14 @@ function ChatBox() {
 
   const handleTypeMessage = (e) => {
     setMessage(e.target.value);
+    if (!socket) return;
+
+    socket.emit("typing", id);
+
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stop-typing", id);
+    }, 800);
   };
 
   const handleSnackBar = (snackBarStatus) => {
@@ -307,6 +368,7 @@ function ChatBox() {
       setShowNewMsgButton(true);
     } else {
       setShowNewMsgButton(false);
+      setUnSeenMessageCount(0);
     }
     scrollDebounceRef.current = window.setTimeout(() => {
       if (distanceFromTop <= 10 && !isLoadingOlder && hasNextPage && hasMore) {
@@ -334,6 +396,7 @@ function ChatBox() {
   const jumpToBottom = () => {
     lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
     setShowNewMsgButton(false);
+    setUnSeenMessageCount(0);
     isNearBottomRef.current = true;
   };
 
@@ -411,15 +474,18 @@ function ChatBox() {
             <CircularProgress size={24} />
           </Box>
         )}
-        {allMessages && allMessages.length > 0 ? (
-          allMessages.map((msg, i) => (
-            <div
-              key={msg._id}
-              ref={i === allMessages.length - 1 ? lastMessageRef : null}
-            >
-              <MessageBox message={msg} />
-            </div>
-          ))
+        {userTyping || (allMessages && allMessages.length > 0) ? (
+          <>
+            {allMessages.map((msg, i) => (
+              <div
+                key={msg._id}
+                ref={i === allMessages.length - 1 ? lastMessageRef : null}
+              >
+                <MessageBox message={msg} />
+              </div>
+            ))}
+            {userTyping && <TypingIndicator />}
+          </>
         ) : (
           <Box
             sx={{
@@ -657,7 +723,17 @@ function ChatBox() {
                 backgroundColor: "#f3f3f3",
               }}
             >
-              <KeyboardArrowDownIcon color="primary" />
+              {unSeenMessageCount > 0 ? (
+                <Badge
+                  color="primary"
+                  badgeContent={unSeenMessageCount}
+                  max={9}
+                >
+                  <KeyboardArrowDownIcon color="primary" />
+                </Badge>
+              ) : (
+                <KeyboardArrowDownIcon color="primary" />
+              )}
             </IconButton>
           )}
         </Box>

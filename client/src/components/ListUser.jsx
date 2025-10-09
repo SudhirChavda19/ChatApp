@@ -22,6 +22,7 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { useSocketContext } from "../context/SocketContext";
 import UserAvatar from "./common/UserAvatar";
+import { useDispatch, useSelector } from "react-redux";
 
 function ListUser({
   roomData,
@@ -49,7 +50,11 @@ function ListUser({
   }, [roomData]);
 
   useEffect(() => {
-    setUnreadCount(unreadCounts);
+    if (!unreadCounts || unreadCounts === 0) {
+      setUnreadCount(0);
+    } else {
+      setUnreadCount(unreadCounts);
+    }
   }, [unreadCounts]);
 
   useEffect(() => {
@@ -138,8 +143,8 @@ function ListUser({
             id={`checkbox-list-secondary-label-${user._id}`}
             primary={`${user.userName}`}
             sx={{
-              span: { lineHeight: 1 },
-              margin: "auto 0px",
+              span: { lineHeight: 0 },
+              margin: "0px",
               alignItems: "flex-end",
             }}
           />
@@ -229,9 +234,16 @@ function ListUser({
             id={`checkbox-list-secondary-label-${user._id}`}
             primary={`${user.userName}`}
           />
-          <Box sx={{padding: 0, margin: "auto 10px", }}>
-            <Badge color="primary" badgeContent={unreadCount} max={99} fontSize={"1px"}></Badge>
-          </Box>
+          {unreadCount > 0 && (
+            <Box sx={{ padding: 0, margin: "auto 10px" }}>
+              <Badge
+                color="primary"
+                badgeContent={unreadCount}
+                max={99}
+                fontSize={"1px"}
+              ></Badge>
+            </Box>
+          )}
         </ListItemButton>
       </ListItem>
     );

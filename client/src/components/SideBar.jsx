@@ -15,16 +15,6 @@ import {
   Typography,
   ClickAwayListener,
   Tooltip,
-  Tabs,
-  Tab,
-  LinearProgress,
-  Button,
-  TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Skeleton,
 } from "@mui/material";
 import WorkspacesIcon from "@mui/icons-material/Workspaces";
@@ -39,12 +29,6 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SettingsIcon from "@mui/icons-material/Settings";
-import {
-  createUser,
-  getConfiremedUsers,
-  getRequestedUsers,
-  updateRequestStatus,
-} from "../services/userDao";
 import { useDBContext } from "../context/DBContext";
 import CommonDialog from "./common/CommonDialog";
 import { useSocketContext } from "../context/SocketContext";
@@ -52,15 +36,17 @@ import ListUser from "./ListUser";
 import SnackBar from "./common/SnackBar";
 import { RoomApi } from "../services/roomService";
 import Profile from "./Profile";
+import { useDispatch, useSelector } from "react-redux";
+import { loadRooms } from "../features/room/roomThunk";
+import { incrementUnread, updateRoom } from "../features/room/roomSlice";
 
-function SideBar({ getAvailableUsers }) {
+function SideBar() {
   const [roomList, setRoomList] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [openSignOutDialog, setOpenSignOutDialog] = useState(false);
   const [openProfileDialog, setOpenProfileDialog] = useState(false);
   const [tabValue, setTabvalue] = useState(0);
   const [openSnackBar, setOpenSnackBar] = useState(false);
-  const [unreadCounts, setUnreadCounts] = useState({});
   // const [loading, setLoading] = useState(true);
 
   const socket = useSocketContext();
@@ -70,14 +56,55 @@ function SideBar({ getAvailableUsers }) {
 
   const userId = localStorage.getItem("userId");
 
-  const { isPending, isError, data, error, refetch } = useQuery({
-    queryKey: ["users", userId],
-    queryFn: () => RoomApi.GetRooms(userId),
-    staleTime: 0,
-    cacheTime: 0,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  const dispatch = useDispatch();
+  const { rooms, unreadCounts, error, loading } = useSelector(
+    (state) => state.rooms
+  );
+
+  useEffect(() => {
+    getRoomData(userId);
+  }, [dispatch, userId]);
+
+  const getRoomData = async (userId) => {
+    await dispatch(loadRooms(userId));
+  };
+
+  // const { isPending, isError, data, error, refetch } = useQuery({
+  //   queryKey: ["users", userId],
+  //   queryFn: () => RoomApi.GetRooms(userId),
+  //   staleTime: 0,
+  //   cacheTime: 0,
+  //   refetchOnMount: false,
+  //   refetchOnWindowFocus: false,
+  // });
+
+  // useEffect(() => {
+  //   if (data) {
+  //     console.log("data :", data);
+  //     if (data.status === 200 && data.data.data.rooms && data.data.data.rooms.length > 0) {
+  //       const rooms = data.data.data.rooms.map((room) => {
+  //         return room;
+  //       });
+  //       setRoomList(rooms);
+  //       let isConfirmedUserAvailable;
+  //       rooms.forEach((room) => {
+  //         isConfirmedUserAvailable = room.status === "Confirmed";
+  //         if (isConfirmedUserAvailable) return;
+  //       });
+  //       getAvailableUsers(isConfirmedUserAvailable);
+  //     } else {
+  //       setRoomList([]);
+  //     }
+  //     if(data.status === 200 && data.data.data.unreadCounts){
+  //       setUnreadCounts(data.data.data.unreadCounts);
+  //     }
+  //   } else {
+  //     setRoomList([]);
+  //   }
+  //   if (error) {
+  //     console.log("error :", error);
+  //   }
+  // }, [data, error]);
 
   const RequestUpdate = useMutation({
     mutationFn: RoomApi.RequestStatusUpdate,
@@ -95,7 +122,7 @@ function SideBar({ getAvailableUsers }) {
           queryKey: ["users", userId],
           exact: true,
         });
-        await refetch();
+        await getRoomData(userId);
       }
     },
   });
@@ -116,38 +143,10 @@ function SideBar({ getAvailableUsers }) {
           queryKey: ["users", userId],
           exact: true,
         });
-        await refetch();
+        await getRoomData(userId);
       }
     },
   });
-
-  useEffect(() => {
-    if (data) {
-      console.log("data :", data);
-      if (data.status === 200 && data.data.data.rooms && data.data.data.rooms.length > 0) {
-        const rooms = data.data.data.rooms.map((room) => {
-          return room;
-        });
-        setRoomList(rooms);
-        let isConfirmedUserAvailable;
-        rooms.forEach((room) => {
-          isConfirmedUserAvailable = room.status === "Confirmed";
-          if (isConfirmedUserAvailable) return;
-        });
-        getAvailableUsers(isConfirmedUserAvailable);
-      } else {
-        setRoomList([]);
-      }
-      if(data.status === 200 && data.data.data.unreadCounts){
-        setUnreadCounts(data.data.data.unreadCounts);
-      }
-    } else {
-      setRoomList([]);
-    }
-    if (error) {
-      console.log("error :", error);
-    }
-  }, [data, error]);
 
   useEffect(() => {
     socket.on("request-to-join-room", () => {
@@ -156,7 +155,7 @@ function SideBar({ getAvailableUsers }) {
         exact: true,
       });
       (async () => {
-        await refetch();
+        await getRoomData(userId);
       })();
     });
   }, [socket]);
@@ -168,20 +167,8 @@ function SideBar({ getAvailableUsers }) {
         exact: true,
       });
       (async () => {
-        await refetch();
+        await getRoomData(userId);
       })();
-    });
-  }, [socket]);
-
-  useEffect(() => {
-    socket.on("updated-room", (updatedRoom) => {
-      console.log("updatedRoom :", updatedRoom);
-      // if(updatedRoom) {
-      //   setRoomList(() => {
-
-      //   });
-      // }
-
     });
   }, [socket]);
 
@@ -285,7 +272,7 @@ function SideBar({ getAvailableUsers }) {
               <CommonDialog
                 open={openDialog}
                 onClose={handleClickClose}
-                confirmedUsers={roomList}
+                confirmedUsers={rooms}
               />
             )}
           </Tooltip>
@@ -330,7 +317,7 @@ function SideBar({ getAvailableUsers }) {
         </ListItem>
         <Divider variant="middle" component="li" />
         {/* {tabValue === 0 ? ( */}
-        {roomList && roomList.length > 0 ? (
+        {rooms && rooms.length > 0 ? (
           <ListItem>
             <List
               dense
@@ -349,7 +336,7 @@ function SideBar({ getAvailableUsers }) {
                 msOverflowStyle: "none",
               }}
             >
-              {roomList?.map((room) => {
+              {rooms?.map((room) => {
                 return (
                   <ListUser
                     key={room._id}

@@ -23,6 +23,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { AuthApi } from "../../services/authService";
 import SnackBar from "./SnackBar";
+import grantNotificationPermission from "../../utils/grantNotificationPermission";
 
 function EmailPassword() {
   const [userName, setUserName] = useState("");
@@ -74,7 +75,7 @@ function EmailPassword() {
         setOpenErrorSnackBar(true);
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log("data :", data);
       if (data.status === 200) {
         const { _id, userName } = data.data.data;
@@ -88,6 +89,7 @@ function EmailPassword() {
         localStorage.setItem("userName", userName);
         setAuthUser(true);
         navigate("/chat", { replace: true });
+        await grantNotificationPermission();
       }
     },
   });

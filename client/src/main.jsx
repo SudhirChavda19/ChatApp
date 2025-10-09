@@ -5,6 +5,8 @@ import { CssBaseline } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { SocketContextProvider } from "./context/SocketProvider.jsx";
 import { AuthContextProvider } from "./context/AuthProvider.jsx";
+import { Provider } from 'react-redux';
+import { store } from "./app/store.js";
 
 const theme = createTheme({
   typography: {
@@ -24,7 +26,10 @@ createRoot(document.getElementById("root")).render(
         <AuthContextProvider>
           <SocketContextProvider>
             <QueryClientProvider client={queryClient}>
+              <Provider store={store}>
+
               <App />
+              </Provider>
             </QueryClientProvider>
           </SocketContextProvider>
         </AuthContextProvider>

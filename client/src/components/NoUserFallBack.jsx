@@ -1,28 +1,21 @@
 import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom"
 import { Box, Typography, Button } from "@mui/material";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import { motion } from "framer-motion";
 import CommonDialog from "./common/CommonDialog";
-import { useAuthContext } from "../context/AuthContext";
-import { getConfiremedUsers } from "../services/userDao";
-import { useDBContext } from "../context/DBContext";
+import { useDispatch, useSelector } from "react-redux";
 
 
 const NoUserFallback = () => {
 
   const [openDialog, setOpenDialog] = useState(false);
-  const { hasUsers } = useOutletContext();
 
   const userName = localStorage.getItem("userName");
 
-  // useEffect(() => {
-  //   (async () => {
-  //     const confiremedUserData = await getConfiremedUsers(db);
-  //     if (confiremedUserData.length > 0) setConfiremedUsers(confiremedUserData);
-  //   })()
-  // }, [isUsersAvailable])
+  const { rooms, unreadCounts, error, loading } = useSelector(
+    (state) => state.rooms
+  );
 
   const handleClickOpen = () => {
     setOpenDialog(true);
@@ -32,7 +25,7 @@ const NoUserFallback = () => {
     setOpenDialog(false);
   };
 
-  const Icon = hasUsers ? ChatBubbleIcon : ChatBubbleOutlineIcon ;
+  const Icon = rooms && rooms.length > 0 ? ChatBubbleIcon : ChatBubbleOutlineIcon ;
   return (
     <Box
       sx={{
@@ -60,15 +53,15 @@ const NoUserFallback = () => {
       </motion.div>
 
       <Typography variant="h5" sx={{ mt: 3, fontWeight: "bold" }}>
-        {hasUsers ? `Hiii 👋 ${userName} ❄` : "No conversations yet"}
+        {rooms && rooms.length > 0 ? `Hiii 👋 ${userName} ❄` : "No conversations yet"}
       </Typography>
       <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
-        {hasUsers
+        {rooms && rooms.length > 0
           ? "Select a chat to start messaging"
           : "Looks like you don’t have any users to chat with. Start a new conversation and connect with your team!"}
       </Typography>
 
-      {!(hasUsers) && (
+      {!(rooms && rooms.length > 0) && (
         <div>
           <Button
             variant="contained"

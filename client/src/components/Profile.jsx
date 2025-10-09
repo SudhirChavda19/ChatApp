@@ -39,7 +39,6 @@ function Profile({ open, onClose }) {
   });
 
   useEffect(() => {
-    console.log("data :", data);
     if (data && data.data.data) {
       const { email, userName } = data.data.data;
       setProfileData({ userName, email });
@@ -83,7 +82,6 @@ function Profile({ open, onClose }) {
       userName: userName.trim(),
     };
     updateProfile.mutate({ id: userId, data });
-    console.log("data :", data);
   };
 
   const handleClose = () => {
