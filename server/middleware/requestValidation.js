@@ -90,12 +90,12 @@ const signInValidation = () => [
 ];
 
 const createRoomValidation = () => [
-    body("senderId").trim().notEmpty().withMessage("Sender Id not found"),
-    body("receiverId").trim().notEmpty().withMessage("Receiver Id not found")
+  body("senderId").trim().notEmpty().withMessage("Sender Id not found"),
+  body("receiverId").trim().notEmpty().withMessage("Receiver Id not found"),
 ];
 
 const idValidation = () => [
-    param("id").trim().notEmpty().withMessage("Id not found"),
+  param("id").trim().notEmpty().withMessage("Id not found"),
 ];
 
 const sendMessageValidation = () => [
@@ -105,29 +105,26 @@ const sendMessageValidation = () => [
   body("message")
     .isLength({ max: 2000 })
     .withMessage("message maximum 2000 character long"),
-]
+];
 
 const updateroomStatusValidation = () => [
-    param("id").trim().notEmpty().withMessage("Id not found"),
-    body("status").notEmpty().withMessage("update status not found"),
+  param("id").trim().notEmpty().withMessage("Id not found"),
+  body("status").notEmpty().withMessage("update status not found"),
 ];
 
 const userUpdateValidation = () => [
   body()
     .custom((value, { req }) => Object.keys(req.body).length !== 0)
     .withMessage("Data Not found"),
-  check("userName").exists().withMessage("user name can't be null"),
   body("userName")
+    .optional()
     .trim()
-    .notEmpty()
-    .withMessage("user name can't be empty")
     .isLength({ min: 4 })
     .withMessage("user name must be atleast 4 character long")
     .isLength({ max: 30 })
     .withMessage("user name maximum 30 character long"),
   body("email")
-    .notEmpty()
-    .withMessage("email adress can't be empty")
+    .optional()
     .trim()
     .isEmail()
     .withMessage("enter valid email adress"),
@@ -155,5 +152,5 @@ module.exports = {
   idValidation,
   updateroomStatusValidation,
   sendMessageValidation,
-  userUpdateValidation
+  userUpdateValidation,
 };

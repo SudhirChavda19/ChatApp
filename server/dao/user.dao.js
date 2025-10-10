@@ -35,12 +35,12 @@ const getUserById = async (userId) => {
   }
 };
 
-const updateUserById = async (userId, { userName, email }) => {
-console.log('userId :', userId);
+const updateUserById = async (userId, updatedata) => {
+console.log('updatedata :', updatedata);
   try {
     return await User.findByIdAndUpdate(
       userId,
-      { userName, email },
+      updatedata,
       {
         new: true,
       }

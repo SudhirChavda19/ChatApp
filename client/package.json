@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build":"vite build && node scripts/copy-sw.js",
+    "build": "vite build && node scripts/copy-sw.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -20,6 +20,7 @@
     "boring-avatars": "^2.0.1",
     "emoji-picker-react": "^4.13.3",
     "firebase": "^12.4.0",
+    "framer-motion": "^12.23.22",
     "gif-picker-react": "^1.4.0",
     "motion": "^12.23.12",
     "react": "^19.1.1",

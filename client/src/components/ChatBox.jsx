@@ -89,6 +89,7 @@ function ChatBox() {
   const dispatch = useDispatch();
 
   const userId = localStorage.getItem("userId");
+  const userName = localStorage.getItem("userName");
 
   const {
     isPending,
@@ -326,6 +327,7 @@ function ChatBox() {
       CreateRequestMutation.mutate({
         receiverId: stateUserId,
         senderId: userId,
+        senderName: userName,
         roomId: id,
         message: message ? message : undefined,
         gifUrl: gifUrl ? gifUrl : undefined,

@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-  }
+  },
+  fcmToken: String,
 }, {timestamps: true});
 
 userSchema.methods.comparePassword = async function (candidatePassword) {

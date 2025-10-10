@@ -3,6 +3,7 @@ const { createMessageDao, getMessagesByRoom } = require("../dao/message.dao");
 const { getReceiverSocketId, io } = require("../socket/socket");
 const { updateRoomOnSendMessage } = require("../dao/room.dao");
 const { redisClient } = require("../redis/redisClient");
+const { sendNotification } = require("../utils/sendNotification");
 
 const sendMessage = async (req, res) => {
   try {
@@ -16,11 +17,13 @@ const sendMessage = async (req, res) => {
     });
 
     if (newMessage) {
+
       io.to(roomId).emit("send-receive-message", newMessage);
       const updatedRoom = await updateRoomOnSendMessage(roomId);
 
       const activeRoom = await redisClient.get(`activeRoom:${receiverId}`);
       if (activeRoom && activeRoom !== roomId) {
+        await sendNotification(req.body);
         await redisClient.hIncrBy(`unread:${receiverId}`, roomId, 1);
       }
       if (updatedRoom) {

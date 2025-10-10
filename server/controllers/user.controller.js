@@ -85,9 +85,8 @@ const getUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log('id :', id);
-    const { userName, email } = req.body;
-    const user = await updateUserById(id, {userName, email});
+    const updateData = req.body;
+    const user = await updateUserById(id, updateData);
     if (!user) {
       return res.status(400).json({
         status: "Fail",

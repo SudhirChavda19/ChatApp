@@ -23,7 +23,8 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { AuthApi } from "../../services/authService";
 import SnackBar from "./SnackBar";
-import grantNotificationPermission from "../../utils/grantNotificationPermission";
+import grantNotificationPermissionAndGenerateFcmToken from "../../utils/generateFcmToken";
+import { UserApi } from "../../services/userService";
 
 function EmailPassword() {
   const [userName, setUserName] = useState("");
@@ -88,11 +89,31 @@ function EmailPassword() {
         localStorage.setItem("userId", _id);
         localStorage.setItem("userName", userName);
         setAuthUser(true);
+        const token = await grantNotificationPermissionAndGenerateFcmToken();
+        console.log("token :", token);
+        if(token){
+          await storeTokenMutation.mutate({ id: _id, data: { fcmToken: token } });
+        }
         navigate("/chat", { replace: true });
-        await grantNotificationPermission();
       }
     },
   });
+  const storeTokenMutation = useMutation({
+    mutationFn: UserApi.UpdateUser,
+    onError: (error) => {
+      console.log("error :", error.response.data);
+      const { message, status } = error.response.data;
+      if (status === "Fail") {
+        setServerError(message);
+      }
+    },
+    onSuccess: (data) => {
+      if (data.status === 201 && data.data.data) {
+      console.log('data.data.data :', data.data.data);
+      }
+    },
+  });
+
   const forgotPasswordMutation = useMutation({
     mutationFn: AuthApi.ForgotPasswordService,
     onError: (error) => {

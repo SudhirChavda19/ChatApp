@@ -253,7 +253,18 @@ function SideBar() {
       <List sx={style}>
         <ListItem>
           <ListItemIcon sx={{ margin: "6px 0px", minWidth: "40px" }}>
-            <WorkspacesIcon fontSize="large" color="primary" />
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#4A90E2"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"></path>
+            </svg>
           </ListItemIcon>
           <ListItemText
             sx={{ my: 0 }}
