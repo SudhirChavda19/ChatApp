@@ -24,6 +24,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { AuthApi } from "../../services/authService";
 import SnackBar from "./SnackBar";
 import grantNotificationPermissionAndGenerateFcmToken from "../../utils/generateFcmToken";
+import notificationSound from "../../assets/notification.mp3";
 import { UserApi } from "../../services/userService";
 
 function EmailPassword() {
@@ -91,8 +92,11 @@ function EmailPassword() {
         setAuthUser(true);
         const token = await grantNotificationPermissionAndGenerateFcmToken();
         console.log("token :", token);
-        if(token){
-          await storeTokenMutation.mutate({ id: _id, data: { fcmToken: token } });
+        if (token) {
+          await storeTokenMutation.mutate({
+            id: _id,
+            data: { fcmToken: token },
+          });
         }
         navigate("/chat", { replace: true });
       }
@@ -109,7 +113,7 @@ function EmailPassword() {
     },
     onSuccess: (data) => {
       if (data.status === 201 && data.data.data) {
-      console.log('data.data.data :', data.data.data);
+        console.log("data.data.data :", data.data.data);
       }
     },
   });
@@ -144,6 +148,9 @@ function EmailPassword() {
     if (path === "/sign-up") {
       await userSignUp(data);
     } else if (path === "/sign-in") {
+      new Audio(notificationSound).play().catch((e) => {
+        console.log("Audio blocked until user interacts", e);
+      });
       await userSignIn(data);
     } else if (path === "/forgot-password") {
       await userForgotPassword(data);

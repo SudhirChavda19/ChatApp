@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   List,
@@ -38,7 +38,7 @@ import { RoomApi } from "../services/roomService";
 import Profile from "./Profile";
 import { useDispatch, useSelector } from "react-redux";
 import { loadRooms } from "../features/room/roomThunk";
-import { incrementUnread, updateRoom } from "../features/room/roomSlice";
+import { updateUnreadCount, updateRoom } from "../features/room/roomSlice";
 
 function SideBar() {
   const [roomList, setRoomList] = useState([]);
@@ -53,6 +53,7 @@ function SideBar() {
   const db = useDBContext();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { id } = useParams();
 
   const userId = localStorage.getItem("userId");
 
@@ -147,6 +148,18 @@ function SideBar() {
       }
     },
   });
+
+  useEffect(() => {
+    socket.on("updated-room", ({ senderId, updatedRoom, unreadCounts }) => {
+      console.log('updatedRoom :', updatedRoom);
+      console.log('id :', id);
+      if (updatedRoom._id !== id) {
+        console.log("unreadCounts :", unreadCounts);
+        dispatch(updateUnreadCount({ roomId: updatedRoom._id, unreadCounts }));
+      }
+      dispatch(updateRoom(updatedRoom));
+    });
+  }, [socket]);
 
   useEffect(() => {
     socket.on("request-to-join-room", () => {
@@ -254,8 +267,8 @@ function SideBar() {
         <ListItem>
           <ListItemIcon sx={{ margin: "6px 0px", minWidth: "40px" }}>
             <svg
-              width="40"
-              height="40"
+              width="36"
+              height="36"
               viewBox="0 0 24 24"
               fill="none"
               stroke="#4A90E2"
@@ -283,13 +296,12 @@ function SideBar() {
               <CommonDialog
                 open={openDialog}
                 onClose={handleClickClose}
-                confirmedUsers={rooms}
               />
             )}
           </Tooltip>
         </ListItem>
         <Divider component="li" />
-        <ListItem sx={{ padding: "10px", width: "100%", margin: "0px auto" }}>
+        <ListItem sx={{ padding: "8px 16px", width: "100%", margin: "0px auto" }}>
           {/* <Tabs
             value={tabValue}
             onChange={handleTabChange}

@@ -37,7 +37,6 @@ import NoUserFallback from "./NoUserFallBack";
 import { useSocketContext } from "../context/SocketContext";
 import { useAuthContext } from "../context/AuthContext";
 import { v4 as uuidv4 } from "uuid";
-import notificationSound from "../assets/notification.mp3";
 import { getRoomMessages, storeMessages } from "../services/messageDao";
 import UserAvatar from "./common/UserAvatar";
 import GIFPicker from "./common/GIFPicker";
@@ -45,9 +44,14 @@ import { MessageApi } from "../services/messageService";
 import { UserApi } from "../services/userService";
 import SnackBar from "./common/SnackBar";
 import { useDispatch, useSelector } from "react-redux";
-import { clearUnread } from "../features/room/roomSlice";
-import { incrementUnread, updateRoom } from "../features/room/roomSlice";
+import {
+  updateUnreadCount,
+  updateRoom,
+  clearUnread,
+} from "../features/room/roomSlice";
 import TypingIndicator from "./common/TypingIndicator";
+import { loadMessages } from "../features/message/messageThunk";
+import { addNewMessage } from "../features/message/messageSlice";
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -68,6 +72,9 @@ function ChatBox() {
   const [openSnackBar, setOpenSnackBar] = useState(false);
   const [unSeenMessageCount, setUnSeenMessageCount] = useState(0);
   const [userTyping, setUserTyping] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [userNavigate, setuserNavigate] = useState(null)
+  const [page, setPage] = useState(1);
 
   // const [lastMessageRef, setLastMessageRef] = useState(null);
   const lastMessageRef = useRef(null);
@@ -90,6 +97,20 @@ function ChatBox() {
 
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
+
+  const { messagesByRoom, loading, error } = useSelector(
+    (state) => state.messages
+  );
+
+  const loadMoreMessages = () => {
+    if (hasNextPage && !loading) {
+      dispatch(loadMessages({ roomId: id, page: page + 1 }));
+    }
+  };
+
+  useEffect(() => {
+    dispatch(loadMessages({ roomId: id, page: 1 }));
+  }, [id]);
 
   const {
     isPending,
@@ -114,28 +135,28 @@ function ChatBox() {
     if (userError) console.log("Error while getting User Data");
   }, [userData, userError]);
 
-  const {
-    data: messageData,
-    error: messageError,
-    isError: isMessageError,
-    refetch: messageRefetch,
-    isFetchNextPageError,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["roomMessages", id],
-    queryFn: ({ pageParam }) => MessageApi.GetRoomMessages(id, pageParam),
-    initialPageParam: 1,
-    getNextPageParam(lastPage, allPages) {
-      const { hasNextPage } = lastPage;
-      return hasNextPage ? allPages.length + 1 : undefined;
-    },
-    enabled: false,
-    staleTime: 0,
-    cacheTime: 0,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  // const {
+  //   data: messageData,
+  //   error: messageError,
+  //   isError: isMessageError,
+  //   refetch: messageRefetch,
+  //   isFetchNextPageError,
+  //   fetchNextPage,
+  //   hasNextPage,
+  // } = useInfiniteQuery({
+  //   queryKey: ["roomMessages", id],
+  //   queryFn: ({ pageParam }) => MessageApi.GetRoomMessages(id, pageParam),
+  //   initialPageParam: 1,
+  //   getNextPageParam(lastPage, allPages) {
+  //     const { hasNextPage } = lastPage;
+  //     return hasNextPage ? allPages.length + 1 : undefined;
+  //   },
+  //   enabled: false,
+  //   staleTime: 0,
+  //   cacheTime: 0,
+  //   refetchOnMount: false,
+  //   refetchOnWindowFocus: false,
+  // });
 
   const CreateRequestMutation = useMutation({
     mutationFn: MessageApi.SendMessage,
@@ -160,42 +181,31 @@ function ChatBox() {
     } else {
       if (location.state.user) {
         setStateUserId(location.state.user._id);
+        setuserNavigate(location.state.user);
       }
-      queryClient.resetQueries({
-        queryKey: ["roomMessages", id],
-        exact: true,
-      });
-      messageRefetch();
     }
   }, [location.state, id]);
 
   useEffect(() => {
     if (id) {
+      // queryClient.resetQueries({
+      //   queryKey: ["roomMessages", id],
+      //   exact: true,
+      // });
+      // messageRefetch();
       dispatch(clearUnread(id));
       socket.emit("join-room", id);
     }
-  }, [id, socket]);
+  }, [id]);
 
   useEffect(() => {
-    socket.on("updated-room", ({ updatedRoom, unreadCounts }) => {
-      if (updatedRoom._id !== id) {
-        dispatch(incrementUnread({ roomId: updatedRoom._id }));
-      }
-      dispatch(updateRoom(updatedRoom));
-    });
-  }, [socket, id]);
+    if (messagesByRoom && messagesByRoom[id]?.messages.length > 0) {
+      console.log(`messageData page:`, messagesByRoom);
+      const { page, hasNextPage, messages } = messagesByRoom[id];
+      setHasNextPage(hasNextPage);
+      setPage(page);
 
-  useEffect(() => {
-    if (
-      messageData &&
-      messageData.pageParams.length > 0 &&
-      messageData.pages[messageData.pageParams.length - 1].data
-    ) {
-      console.log("messageData page 1 -------:", messageData);
-      const messages =
-        messageData.pages[messageData.pageParams.length - 1].data;
-
-      if (messageData.pageParams.length === 1) {
+      if (page === 1) {
         setAllMessages((prev) => {
           const existing = new Set(prev.map((m) => m._id));
           const filtered = messages.filter((m) => !existing.has(m._id));
@@ -205,7 +215,7 @@ function ChatBox() {
         if (!hasNextPage) {
           setHasMore(false);
         }
-      } else if (messageData.pageParams.length > 1) {
+      } else if (page > 1) {
         const cr = chatRef.current;
         if (!cr) return;
 
@@ -230,10 +240,10 @@ function ChatBox() {
         setIsLoadingOlder(false);
       }
     }
-    if (messageError) {
-      console.log("messageError :", messageError);
+    if (error) {
+      console.log("messageError :", error);
     }
-  }, [messageData, messageError]);
+  }, [messagesByRoom, error]);
 
   useEffect(() => {
     showNewMsgButtonRef.current = showNewMsgButton;
@@ -242,8 +252,7 @@ function ChatBox() {
   useEffect(() => {
     socket.on("send-receive-message", async (data) => {
       console.log("message ::", data);
-      // const sound = new Audio(notificationSound);
-      // sound.play();
+
       if (id === data.roomId) {
         setAllMessages((prev) => {
           if (prev.some((m) => m._id === data._id)) return prev;
@@ -263,7 +272,11 @@ function ChatBox() {
           }, 50);
         }
       }
+      dispatch(addNewMessage({ roomId: data.roomId, newMessage: data }));
     });
+    return () => {
+      socket.off("send-receive-message");
+    };
   }, [socket]);
 
   useEffect(() => {
@@ -388,7 +401,7 @@ function ChatBox() {
       const prevScrollHeight = cr.scrollHeight;
       setPreviousScrollHeight(prevScrollHeight);
       setTimeout(async () => {
-        await fetchNextPage();
+        await loadMoreMessages();
       }, 600);
     } catch (error) {
       console.error("error loading older messages", error);
@@ -436,7 +449,7 @@ function ChatBox() {
     >
       {/* Header */}
       <AppBar position="static">
-        <Toolbar>
+        <Toolbar disableGutters sx={{ padding: "0px 16px" }}>
           <UserAvatar name={user.userName} size={"40px"} />
           <Box>
             <Typography variant="h6" sx={{ ml: 1, lineHeight: 1 }}>

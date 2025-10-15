@@ -6,16 +6,24 @@ import { motion } from "framer-motion";
 import CommonDialog from "./common/CommonDialog";
 import { useDispatch, useSelector } from "react-redux";
 
-
 const NoUserFallback = () => {
-
   const [openDialog, setOpenDialog] = useState(false);
+  const [userAvailable, setUserAvailable] = useState(false);
 
   const userName = localStorage.getItem("userName");
 
   const { rooms, unreadCounts, error, loading } = useSelector(
     (state) => state.rooms
   );
+
+  useEffect(() => {
+    rooms.forEach((room) => {
+      if (room.status === "Confirmed") {
+        setUserAvailable(true);
+        return;
+      }
+    });
+  }, [rooms]);
 
   const handleClickOpen = () => {
     setOpenDialog(true);
@@ -25,7 +33,8 @@ const NoUserFallback = () => {
     setOpenDialog(false);
   };
 
-  const Icon = rooms && rooms.length > 0 ? ChatBubbleIcon : ChatBubbleOutlineIcon ;
+  const Icon =
+   userAvailable ? ChatBubbleIcon : ChatBubbleOutlineIcon;
   return (
     <Box
       sx={{
@@ -53,15 +62,17 @@ const NoUserFallback = () => {
       </motion.div>
 
       <Typography variant="h5" sx={{ mt: 3, fontWeight: "bold" }}>
-        {rooms && rooms.length > 0 ? `Hiii 👋 ${userName} ❄` : "No conversations yet"}
+        {userAvailable
+          ? `Hiii 👋 ${userName} ❄`
+          : "No conversations yet"}
       </Typography>
       <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
-        {rooms && rooms.length > 0
+        {userAvailable
           ? "Select a chat to start messaging"
           : "Looks like you don’t have any users to chat with. Start a new conversation and connect with your team!"}
       </Typography>
 
-      {!(rooms && rooms.length > 0) && (
+      {!userAvailable && (
         <div>
           <Button
             variant="contained"
@@ -70,7 +81,9 @@ const NoUserFallback = () => {
           >
             Start a Chat
           </Button>
-          {openDialog && <CommonDialog open={openDialog} onClose={handleClickClose} />}
+          {openDialog && (
+            <CommonDialog open={openDialog} onClose={handleClickClose} />
+          )}
         </div>
       )}
     </Box>

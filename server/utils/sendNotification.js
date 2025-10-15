@@ -5,14 +5,13 @@ const sendNotification = async (body) => {
   try {
     const { senderId, senderName, receiverId, roomId, message, gifUrl } = body;
     const receiver = await getUserById(receiverId);
-    console.log('receiver?.fcmToken :', receiver?.fcmToken);
     if (receiver && receiver?.fcmToken) {
       const messagePayload = {
         notification: {
           title: senderName || "New Message",
-          body: `${message}`,
-        //   gifUrl
+          body: message ? `${message}` : "" ,
         },
+        data: {gifUrl: gifUrl || ""},  
         token: receiver.fcmToken,
       };
 
@@ -22,10 +21,6 @@ const sendNotification = async (body) => {
     }
   } catch (error) {
     console.log("Error in send Notification util", error);
-    return res.status(500).json({
-      status: "Fail",
-      message: "Internal Server Error",
-    });
   }
 };
 

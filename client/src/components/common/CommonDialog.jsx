@@ -32,8 +32,9 @@ import { useAuthContext } from "../../context/AuthContext";
 import { UserApi } from "../../services/userService";
 import UserAvatar from "./UserAvatar";
 import { RoomApi } from "../../services/roomService";
+import { useSelector } from "react-redux";
 
-function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
+function CommonDialog({ open, onClose, signOut }) {
   const [searchUserName, setSearchUserName] = useState("");
   const [debounceInput, setDebounceInput] = useState(null);
   const [isSignOut, setIsSignOut] = useState(false);
@@ -41,19 +42,23 @@ function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userList, setUserList] = useState([]);
-  const [confirmedUsersList, setConfirmedUsersList] = useState([]);
-  const [confirmedRoomsId, setConfirmedRoomsId] = useState({});
+  const [showError, setShowError] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [isUserConfirmed, setIsUserConfirmed] = useState(false);
 
   const listboxRef = useRef(null);
-  const uniqueId = uuidv4();
   const navigate = useNavigate();
   const { setAuthUser } = useAuthContext();
-  // const db = useDBContext();
-  const socket = useSocketContext();
   const queryClient = useQueryClient();
 
   const userId = localStorage.getItem("userId");
+
+  const {
+    rooms,
+    unreadCounts,
+    error: roomError,
+    loading: roomLoading,
+  } = useSelector((state) => state.rooms);
 
   const {
     data,
@@ -155,25 +160,30 @@ function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
     },
   });
 
-  useEffect(() => {
-    if (confirmedUsers && confirmedUsers.length > 0) {
-      const userIds = confirmedUsers.map((room) => {
-        const user = room.participants.filter(
-          (participant) => participant._id !== userId
-        )[0];
-        return user._id;
-      });
-      let roomIds = {};
-      confirmedUsers.forEach((room) => {
-        const user = room.participants.filter(
-          (participant) => participant._id !== userId
-        )[0];
-        roomIds[user._id] = room._id
-      });
-      setConfirmedRoomsId(roomIds)
-      setConfirmedUsersList(userIds);
-    }
-  }, [confirmedUsers]);
+  // useEffect(() => {
+  //   if (rooms && rooms.length > 0) {
+  //     const userIds = rooms.map((room) => {
+  //       if (room.status === "Confirmed") {
+  //         const user = room.participants.filter(
+  //           (participant) => participant._id !== userId
+  //         )[0];
+  //         return user._id;
+  //       }
+  //     });
+  //     // let roomIds = {};
+  //     // rooms.forEach((room) => {
+  //     //   if (room.status === "Confirmed") {
+  //     //     const user = room.participants.filter(
+  //     //       (participant) => participant._id !== userId
+  //     //     )[0];
+  //     //     roomIds[user._id] = room._id;
+  //     //   }
+  //     // });
+
+  //     // setConfirmedRoomsId(roomIds);
+  //     setConfirmedUsersList(userIds);
+  //   }
+  // }, [rooms]);
 
   const handleClose = () => {
     setSearchUserName("");
@@ -197,14 +207,26 @@ function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
     if (isSignOut) {
       signOutMutation.mutate();
     } else {
-      if (selectedUser && isUserConfirmed) {
-        navigate(`/chat/room/${confirmedRoomsId[selectedUser._id]}`, { state: { user: selectedUser } });
-        handleClose();
+      console.log('selectedUser :', !selectedUser);
+      if (!selectedUser) return;
+      if (selectedRoom) {
+        console.log('selectedRoom :', selectedRoom);
+        if (selectedRoom?.status === "Requested") {
+          setShowError("You already requested");
+        } else if (selectedRoom?.status === "Rejected") {
+          setShowError("Please, Remove rejected request");
+        } else if (selectedRoom?.status === "Confirmed") {
+          navigate(`/chat/room/${selectedRoom._id}`, {
+            state: { user: selectedUser },
+          });
+          handleClose();
+        }
       } else {
         CreateRequestMutation.mutate({
           senderId: userId,
           receiverId: selectedUser._id,
         });
+        handleClose();
       }
     }
   };
@@ -234,9 +256,18 @@ function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    if (confirmedUsersList.includes(user._id)) {
-      setIsUserConfirmed(true);
+    console.log("user :", user);
+    if (rooms && rooms.length > 0) {
+      rooms.forEach((room) => {
+        room.participants.forEach((participant) => {
+          if (participant._id === user._id) {
+            setSelectedRoom(room);
+            return;
+          }
+        });
+      });
     }
+    console.log("selectedRoom :", selectedRoom);
   };
 
   const handleRemoveSelectedUser = () => {
@@ -244,6 +275,8 @@ function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
     setServerError("");
     setSearchUserName(searchUserName);
     setIsUserConfirmed(false);
+    setSelectedRoom(null)
+    setShowError(null)
   };
 
   const Loader = () => (
@@ -263,142 +296,155 @@ function CommonDialog({ open, onClose, signOut, confirmedUsers }) {
       <DialogTitle>{isSignOut ? "Sign Out" : "Request"}</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          {isSignOut
-            ? "Are you sure you want to sign out"
-            : "Enter the User Name that you want to request"}
+          {isSignOut && "Are you sure you want to sign out"}
         </DialogContentText>
 
         <form id="subscription-form">
           {!isSignOut && (
             <Box sx={{ width: "100%" }}>
               {!selectedUser ? (
-                <Autocomplete
-                  freeSolo
-                  disableClearable={true}
-                  open={!!searchUserName?.trim()}
-                  clearOnBlur={false}
-                  onInputChange={(event, value, reason) => {
-                    handleOnChange(value, reason);
-                  }}
-                  inputValue={searchUserName}
-                  options={userList}
-                  getOptionLabel={(option) => option.userName}
-                  onChange={(event, value) => handleUserSelect(value)}
-                  popupIcon={null}
-                  loading={loading}
-                  loadingText={<Loader />}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      autoFocus
-                      required
-                      margin="dense"
-                      id="userName"
-                      name="userName"
-                      placeholder="Search..."
-                      type="text"
-                      fullWidth
-                      // onChange={(event) => {
-                      //   handleOnChange(event);
-                      // }}
-                      // value={searchUserName}
-                      variant="standard"
-                      // InputProps={{
-                      //   ...params.InputProps,
-                      //   endAdornment: <>{params.InputProps.endAdornment}</>,
-                      // }}
-                    />
-                  )}
-                  ListboxProps={{
-                    onScroll: handleScroll,
-                    style: {
-                      maxHeight: 200,
-                      overflow: "auto",
-                      "&::WebkitScrollba": {
-                        display: "none",
+                <>
+                  <DialogContentText>
+                    Are you sure you want to sign out
+                  </DialogContentText>
+                  <Autocomplete
+                    freeSolo
+                    disableClearable={true}
+                    open={!!searchUserName?.trim()}
+                    clearOnBlur={false}
+                    onInputChange={(event, value, reason) => {
+                      handleOnChange(value, reason);
+                    }}
+                    inputValue={searchUserName}
+                    options={userList}
+                    getOptionLabel={(option) => option.userName}
+                    onChange={(event, value) => handleUserSelect(value)}
+                    popupIcon={null}
+                    loading={loading}
+                    loadingText={<Loader />}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        autoFocus
+                        required
+                        margin="dense"
+                        id="userName"
+                        name="userName"
+                        placeholder="Search..."
+                        type="text"
+                        fullWidth
+                        // onChange={(event) => {
+                        //   handleOnChange(event);
+                        // }}
+                        // value={searchUserName}
+                        variant="standard"
+                        // InputProps={{
+                        //   ...params.InputProps,
+                        //   endAdornment: <>{params.InputProps.endAdornment}</>,
+                        // }}
+                      />
+                    )}
+                    ListboxProps={{
+                      onScroll: handleScroll,
+                      style: {
+                        maxHeight: 200,
+                        overflow: "auto",
+                        "&::WebkitScrollba": {
+                          display: "none",
+                        },
+                        scrollbarWidth: "none",
+                        msOverflowStyle: "none",
                       },
-                      scrollbarWidth: "none",
-                      msOverflowStyle: "none",
-                    },
-                  }}
-                  renderOption={(props, option) => (
-                    <li
-                      {...props}
-                      key={option._id}
-                      style={{
-                        padding: "4px 8px",
-                        backgroundColor: "transparent",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          padding: "8px",
-                          backgroundColor: "#f3f3f3",
-                          borderRadius: "12px",
-                          // marginBottom: "4px",
-                          width: "100%",
-                          transition: "background-color 0.2s",
-                          "&:hover": {
-                            backgroundColor: "#e0f7fa",
-                          },
+                    }}
+                    renderOption={(props, option) => (
+                      <li
+                        {...props}
+                        key={option._id}
+                        style={{
+                          padding: "4px 8px",
+                          backgroundColor: "transparent",
                         }}
                       >
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ lineHeight: 1, marginBottom: "4px" }}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            padding: "8px",
+                            backgroundColor: "#f3f3f3",
+                            borderRadius: "12px",
+                            // marginBottom: "4px",
+                            width: "100%",
+                            transition: "background-color 0.2s",
+                            "&:hover": {
+                              backgroundColor: "#e0f7fa",
+                            },
+                          }}
                         >
-                          {option.userName}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ lineHeight: 1 }}
-                        >
-                          {option.email}
-                        </Typography>
-                      </Box>
-                    </li>
-                  )}
-                  ListboxComponent={forwardRef(function ListboxComponent(
-                    props,
-                    ref
-                  ) {
-                    return (
-                      <ul {...props} ref={ref}>
-                        {userList?.length === 0 && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "center",
-                              p: 1,
-                            }}
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ lineHeight: 1, marginBottom: "4px" }}
                           >
-                            <Typography
-                              variant="subtitle2"
-                              sx={{ lineHeight: 1, marginBottom: "4px" }}
+                            {option.userName}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ lineHeight: 1 }}
+                          >
+                            {option.email}
+                          </Typography>
+                        </Box>
+                      </li>
+                    )}
+                    ListboxComponent={forwardRef(function ListboxComponent(
+                      props,
+                      ref
+                    ) {
+                      return (
+                        <ul {...props} ref={ref}>
+                          {userList?.length === 0 && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                p: 1,
+                              }}
                             >
-                              No User Found
-                            </Typography>
-                          </Box>
-                        )}
-                        {props.children}
-                        {/* {loading && userList.length > 9 && <Loader />} */}
-                      </ul>
-                    );
-                  })}
-                />
+                              <Typography
+                                variant="subtitle2"
+                                sx={{ lineHeight: 1, marginBottom: "4px" }}
+                              >
+                                No User Found
+                              </Typography>
+                            </Box>
+                          )}
+                          {props.children}
+                          {/* {loading && userList.length > 9 && <Loader />} */}
+                        </ul>
+                      );
+                    })}
+                  />
+                </>
               ) : (
-                <Chip
-                  sx={{ padding: "8px", height: "fit-content" }}
-                  avatar={
-                    <UserAvatar name={selectedUser.userName} size={"30px"} />
-                  }
-                  label={selectedUser.userName}
-                  onDelete={handleRemoveSelectedUser}
-                  color="primary"
-                />
+                <Box sx={{ display: "flex", flexDirection: "column", width:"240px" }}>
+                  <Chip
+                    sx={{ padding: "8px", height: "fit-content" }}
+                    avatar={
+                      <UserAvatar name={selectedUser.userName} size={"40px"} />
+                    }
+                    label={selectedUser.userName}
+                    onDelete={handleRemoveSelectedUser}
+                    color="primary"
+                  />
+                  <Typography
+                    sx={{ padding: "8px 0px", fontSize: "0.80rem" }}
+                    error={showError}
+                    color="error"
+                    variant="caption"
+                  >
+                    {showError ? <span>{showError}</span> : ""}
+                  </Typography>
+                </Box>
               )}
             </Box>
           )}

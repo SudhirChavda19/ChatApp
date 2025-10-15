@@ -20,7 +20,7 @@ import { useAuthContext } from "../context/AuthContext";
 function MessageBox({ message, handleScroll }) {
 
   const looksLikeCode = (text) =>
-  /[{;}=<>()[\]]/.test(text) || text.includes("function") || text.includes("=>");
+  /[{;}=<>[\]]/.test(text) || text.includes("function") || text.includes("=>");
 
   // const { authUser } = useAuthContext();
   const userId = localStorage.getItem("userId");

@@ -10,10 +10,10 @@ const roomSlice = createSlice({
     error: null,
   },
   reducers: {
-    incrementUnread: (state, action) => {
-      const { roomId } = action.payload;
-      console.log("roomId STATE---------:", roomId);
-      state.unreadCounts[roomId] = (state.unreadCounts[roomId] || 0) + 1;
+    updateUnreadCount: (state, action) => {
+      const { roomId, unreadCounts } = action.payload;
+      console.log("roomId STATE---------:", roomId, unreadCounts);
+      state.unreadCounts[roomId] = +unreadCounts[roomId] || 0;
     },
     clearUnread: (state, action) => {
       delete state.unreadCounts[action.payload];
@@ -47,5 +47,5 @@ const roomSlice = createSlice({
   },
 });
 
-export const { incrementUnread, clearUnread, updateRoom } = roomSlice.actions;
+export const { updateUnreadCount, clearUnread, updateRoom } = roomSlice.actions;
 export default roomSlice.reducer;

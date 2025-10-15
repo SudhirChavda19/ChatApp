@@ -30,6 +30,19 @@ const notifyPresenceChange = (userId, status) => {
   }
 };
 
+function addUserToWatch(socketId, userId) {
+  if (!watchMap.has(socketId)) {
+    // create new array for this socket
+    watchMap.set(socketId, [userId]);
+  } else {
+    // get existing array and add userId if not already present
+    const existing = watchMap.get(socketId);
+    if (!existing.includes(userId)) {
+      existing.push(userId);
+    }
+  }
+}
+
 io.on("connection", (socket) => {
   console.log("User Connected: ", socket.id);
   console.log("UserID::::::::: ", socket.handshake.query.userId);
@@ -40,7 +53,7 @@ io.on("connection", (socket) => {
   notifyPresenceChange(userId, true);
 
   socket.on("is-user-online", (userId, callback) => {
-    watchMap.set(socket.id, userId);
+    addUserToWatch(socket.id, userId);
     const dataSet = new Set(userId);
     const onlineUsers = userSocketMap.has(userId);
     callback({ status: onlineUsers });
@@ -70,8 +83,8 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("User Disconnected: ", socket.id);
     userSocketMap.delete(userId);
-    watchMap.delete(socket.id);
     notifyPresenceChange(userId, false);
+    watchMap.delete(socket.id);
     socket.disconnect();
   });
 });

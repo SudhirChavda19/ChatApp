@@ -12,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { UserApi } from "../services/userService";
+import UserAvatar from "./common/UserAvatar";
 
 function Profile({ open, onClose }) {
   const [isUpdate, setIsUpdate] = useState(false);
@@ -120,6 +121,9 @@ function Profile({ open, onClose }) {
     <Dialog open={open} onClose={handleClose}>
       <DialogTitle>{isUpdate ? "Update Profile" : "Profile"}</DialogTitle>
       <DialogContent>
+        <Box>
+          <UserAvatar name={userName} size={"40px"} />
+        </Box>
         <form>
           <Box>
             <TextField

@@ -20,15 +20,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-// navigator.serviceWorker
-//   .register("/firebase-messaging-sw.js")
-//   .then((registration) => {
-//     console.log("Service Worker registered:", registration);
-//   })
-//   .catch((err) => {
-//     console.error("Service Worker registration failed:", err);
-//   });
-
 export { messaging, getToken, onMessage };
 
 

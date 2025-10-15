@@ -78,6 +78,7 @@ const deleteRoomById = async (roomId) => {
 };
 
 const updateRoomOnSendMessage = async (roomId) => {
+console.log('roomId :', roomId);
   try {
     return await Room.findByIdAndUpdate(
       roomId,

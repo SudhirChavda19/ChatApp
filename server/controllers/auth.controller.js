@@ -1,6 +1,7 @@
 
 const {createUser, getUserByEmail} = require("../dao/user.dao.js")
 const { generateTokenAndSetCookie } = require("../utils/generateToken.js");
+const bcrypt = require("bcrypt");
 
 const signUp = async (req, res) => {
   try {

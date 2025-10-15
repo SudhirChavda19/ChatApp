@@ -41,19 +41,18 @@ function SnackBar({
     <Snackbar
       anchorOrigin={{ vertical, horizontal }}
       open={open}
-      autoHideDuration={30000}
+      autoHideDuration={3000}
       onClose={handleClose}
       severity={severity}
       sx={{ div: { minWidth: "fit-content", padding: "8px 16px" } }}
       key={vertical + horizontal}
     >
       <SnackbarContent
-        // padding={"8px 16px"}
         style={{
           backgroundColor: "#ffffffff",
           color: severity === "error" ? "#D32F2F" : "black",
           border: severity === "error" ? "1px solid #D32F2F" : "inherite",
-          padding: "0px",
+          padding: "10px 60px",
         }} // Apply custom background color
         message={message}
       />

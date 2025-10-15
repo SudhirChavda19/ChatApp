@@ -4,9 +4,9 @@ export const MessageApi = {
   SendMessage: async (data) => {
     return await axiosWithCredentials.post(`/message/sendMessage`, data);
   },
-  GetRoomMessages: async (id, pageParam) => {
-    const response = await axiosWithCredentials.get(`/message/getMessages/${id}`, {params: { page: pageParam, limit: 20 },});
-    return response.data;
+  GetRoomMessages: async (id, pageParam, limit) => {
+    const response = await axiosWithCredentials.get(`/message/getMessages/${id}`, {params: { page: pageParam, limit },});
+    return response;
   },
 //   RequestStatusUpdate: async ({ isAccepted, roomId, senderId }) => {
 //     console.log("senderId :", senderId);

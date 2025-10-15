@@ -8,6 +8,9 @@ const { sendNotification } = require("../utils/sendNotification");
 const sendMessage = async (req, res) => {
   try {
     const { senderId, receiverId, roomId, message, gifUrl } = req.body;
+    console.log('roomId :', roomId);
+    const receiverUserId = getReceiverSocketId(receiverId);
+    const senderUserId = getReceiverSocketId(senderId);
 
     const newMessage = await createMessageDao({
       message,
@@ -17,7 +20,6 @@ const sendMessage = async (req, res) => {
     });
 
     if (newMessage) {
-
       io.to(roomId).emit("send-receive-message", newMessage);
       const updatedRoom = await updateRoomOnSendMessage(roomId);
 
@@ -26,12 +28,15 @@ const sendMessage = async (req, res) => {
         await sendNotification(req.body);
         await redisClient.hIncrBy(`unread:${receiverId}`, roomId, 1);
       }
+      if (activeRoom && activeRoom === roomId && !receiverUserId) {
+        await sendNotification(req.body);
+      }
       if (updatedRoom) {
-        const receiverUserId = getReceiverSocketId(receiverId);
-        const senderUserId = getReceiverSocketId(senderId);
+      console.log('updatedRoom :', updatedRoom);
         io.to(senderUserId)
           .to(receiverUserId)
           .emit("updated-room", {
+            senderId,
             updatedRoom,
             unreadCounts: await redisClient.hGetAll(`unread:${receiverId}`),
           });
@@ -77,9 +82,7 @@ const GetRoomMessages = async (req, res) => {
     return res.status(200).json({
       status: "Success",
       message: "Messages Fetched SuccessFully",
-      data: messages,
-      totalPages,
-      hasNextPage,
+      data: { roomId: id, messages, totalPages, page, hasNextPage },
     });
   } catch (error) {
     console.log("Error in GetRoomMessages controller", error);
