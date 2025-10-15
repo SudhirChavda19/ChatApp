@@ -117,7 +117,6 @@ export const updateRequestStatus = async (id, { requested, createdAt }, db) => {
   const request = objectStore.get(id);
   request.onsuccess = () => {
     const user = request.result;
-    console.log('user :', user)
     if (user) {
       user.requested = requested;
       user.createdAt = createdAt;
