@@ -8,7 +8,6 @@ const signUp = async (req, res) => {
     const { userName, email, password } = req.body;
 
     const user = await getUserByEmail(email)
-    console.log("user :", user);
 
     if (user) {
       return res.status(400).json({
@@ -43,7 +42,6 @@ const signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await getUserByEmail(email)
-    console.log("user :", user);
     if (!user) {
       return res.status(404).json({
         status: "Fail",
@@ -78,7 +76,6 @@ const forgotPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
     const user = await getUserByEmail(email)
-    console.log("user :", user);
     if (!user) {
       return res.status(404).json({
         status: "Fail",

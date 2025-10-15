@@ -4,7 +4,6 @@ const User = require("../models/user.model.js");
 const searchUser = async (req, res) => {
   try {
     let { username, page, limit } = req.query;
-    console.log("username --------:", username);
     page = Number(page) || 1;
     limit = Number(limit) || 10;
     const skip = (page - 1) * limit;

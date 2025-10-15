@@ -52,13 +52,6 @@ const GetRoomByUser = async (req, res) => {
     const { id } = req.params;
 
     const rooms = await getRoomsByUserId(id);
-    console.log('rooms :', rooms);
-    // if (!rooms) {
-    //   return res.status(404).json({
-    //     status: "Fail",
-    //     message: "No Requests Found",
-    //   });
-    // }
 
     const unreadData = await redisClient.hGetAll(`unread:${id}`);
     console.log('unreadData :', unreadData);

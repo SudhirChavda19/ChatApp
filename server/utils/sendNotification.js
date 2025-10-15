@@ -17,7 +17,7 @@ const sendNotification = async (body) => {
 
       // 3️⃣ Send push notification
       await admin.messaging().send(messagePayload);
-      console.log("Notification sent to:", receiver.email);
+      // console.log("Notification sent to:", receiver.email);
     }
   } catch (error) {
     console.log("Error in send Notification util", error);

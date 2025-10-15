@@ -32,9 +32,7 @@ const getMessagesByRoom = async (roomId, limit, page) => {
 
     const count = await Message.countDocuments({ roomId });
     const totalPages = Math.ceil(count / limit);
-    console.log("totalPages :", totalPages);
     const hasNextPage = page < totalPages;
-    console.log("hasNextPage :", hasNextPage);
 
     return { messages: messages.reverse(), totalPages, hasNextPage };
   } catch (error) {

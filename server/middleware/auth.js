@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 module.exports.auth = async (req, res, next) => {
     const token = req.cookies.jwt;
     if (!token) {
-        console.log("error", "Need to Sign In");
         return res.status(401).json({
             status: "Fail",
             message: "Need to Sign In",

@@ -44,8 +44,7 @@ function addUserToWatch(socketId, userId) {
 }
 
 io.on("connection", (socket) => {
-  console.log("User Connected: ", socket.id);
-  console.log("UserID::::::::: ", socket.handshake.query.userId);
+  // console.log("User Connected: ", socket.handshake.query.userId);
 
   const userId = socket.handshake.query?.userId;
   if (userId != "undefined") userSocketMap.set(userId, socket.id);
@@ -64,7 +63,6 @@ io.on("connection", (socket) => {
     const clients = io.sockets.adapter.rooms;
     await redisClient.set(`activeRoom:${userId}`, roomId);
     await redisClient.hDel(`unread:${userId}`, roomId);
-    console.log("Room Joined :", clients);
   });
 
   socket.on("typing", (roomId) => {
@@ -81,7 +79,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User Disconnected: ", socket.id);
+    // console.log("User Disconnected: ", socket.id);
     userSocketMap.delete(userId);
     notifyPresenceChange(userId, false);
     watchMap.delete(socket.id);

@@ -21,7 +21,6 @@ const createRoomDao = async ({ senderId, receiverId }) => {
 };
 
 const getRoomsByUserId = async (userId) => {
-  console.log("userId ----------------:", userId);
   try {
     const userObjectId = new mongoose.Types.ObjectId(userId);
     return await Room.find({
@@ -46,7 +45,6 @@ const getRoomsByUserId = async (userId) => {
 };
 
 const updateRoomStatusDao = async (roomId, status) => {
-  console.log("status ----------------:", roomId, status);
   try {
     return await Room.findByIdAndUpdate(
       roomId,
@@ -65,7 +63,6 @@ const updateRoomStatusDao = async (roomId, status) => {
 };
 
 const deleteRoomById = async (roomId) => {
-  console.log("roomId ----------------:", roomId);
   try {
     return await Room.findByIdAndDelete({ _id: roomId });
   } catch (error) {
@@ -78,7 +75,6 @@ const deleteRoomById = async (roomId) => {
 };
 
 const updateRoomOnSendMessage = async (roomId) => {
-console.log('roomId :', roomId);
   try {
     return await Room.findByIdAndUpdate(
       roomId,

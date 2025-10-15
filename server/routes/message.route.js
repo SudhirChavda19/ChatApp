@@ -9,8 +9,4 @@ MessageRoute.post("/sendMessage", auth, sendMessageValidation(), validate, sendM
 
 MessageRoute.get("/getMessages/:id", auth, idValidation(), validate, GetRoomMessages);
 
-// MessageRoute.patch("/updateRoomStatus/:id", auth, updateroomStatusValidation(), validate, updateRoomStatus);
-
-// MessageRoute.delete("/removeRoom/:id", auth, idValidation(), validate, removeRoom);
-
 module.exports = MessageRoute;

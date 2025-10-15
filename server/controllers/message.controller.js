@@ -8,7 +8,6 @@ const { sendNotification } = require("../utils/sendNotification");
 const sendMessage = async (req, res) => {
   try {
     const { senderId, receiverId, roomId, message, gifUrl } = req.body;
-    console.log('roomId :', roomId);
     const receiverUserId = getReceiverSocketId(receiverId);
     const senderUserId = getReceiverSocketId(senderId);
 
@@ -32,7 +31,6 @@ const sendMessage = async (req, res) => {
         await sendNotification(req.body);
       }
       if (updatedRoom) {
-      console.log('updatedRoom :', updatedRoom);
         io.to(senderUserId)
           .to(receiverUserId)
           .emit("updated-room", {
@@ -72,12 +70,6 @@ const GetRoomMessages = async (req, res) => {
       limit,
       page
     );
-    // if (!rooms) {
-    //   return res.status(404).json({
-    //     status: "Fail",
-    //     message: "No Requests Found",
-    //   });
-    // }
 
     return res.status(200).json({
       status: "Success",

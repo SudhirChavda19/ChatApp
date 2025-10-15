@@ -36,7 +36,6 @@ const getUserById = async (userId) => {
 };
 
 const updateUserById = async (userId, updatedata) => {
-console.log('updatedata :', updatedata);
   try {
     return await User.findByIdAndUpdate(
       userId,
