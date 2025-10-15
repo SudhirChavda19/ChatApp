@@ -2,7 +2,7 @@
 const {createClient} = require("redis");
 
 const redisClient = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379", // local or managed Redis URL
+  url: process.env.NODE_ENV === "production" ? process.env.REDIS_URL : "redis://localhost:6379",
 });
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
