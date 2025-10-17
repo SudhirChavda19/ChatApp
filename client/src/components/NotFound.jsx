@@ -8,12 +8,12 @@ const NotFound = () => {
   const { authUser } = useAuthContext();
 
   const handleNavigation = () => {
-    if(authUser) {
-        navigate("/chat")
+    if (authUser) {
+      navigate("/chat");
     } else {
-        navigate("/sign-in")
+      navigate("/sign-in");
     }
-  }
+  };
 
   return (
     <Box
@@ -45,11 +45,7 @@ const NotFound = () => {
       <Typography variant="body1" sx={{ mb: 4 }}>
         The page you are looking for doesn’t exist or has been moved.
       </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleNavigation}
-      >
+      <Button variant="contained" color="primary" onClick={handleNavigation}>
         Go Back Home
       </Button>
     </Box>

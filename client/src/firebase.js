@@ -21,11 +21,3 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 export { messaging, getToken, onMessage };
-
-
-// npm install firebase
-//To host your site with Firebase Hosting, you need the Firebase CLI (a command line tool).
-// npm install -g firebase-tools
-// firebase login
-// firebase init
-// firebase deploy

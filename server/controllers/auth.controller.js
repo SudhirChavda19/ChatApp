@@ -1,5 +1,5 @@
 
-const {createUser, getUserByEmail} = require("../dao/user.dao.js")
+const {createUser, getUserByEmail, updateUserById} = require("../dao/user.dao.js")
 const { generateTokenAndSetCookie } = require("../utils/generateToken.js");
 const bcrypt = require("bcrypt");
 
@@ -40,8 +40,8 @@ const signUp = async (req, res) => {
 
 const signIn = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await getUserByEmail(email)
+    const { email, password, fcmToken } = req.body;
+    const user = await getUserByEmail(email);
     if (!user) {
       return res.status(404).json({
         status: "Fail",
@@ -58,6 +58,7 @@ const signIn = async (req, res) => {
         .json({ status: "Fail", message: "Wrong Password" });
     }
 
+    if(fcmToken) await updateUserById(user._id, {fcmToken});
     return res.status(200).json({
       status: "Success",
       message: "Signed in successfully",

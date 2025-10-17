@@ -1,4 +1,3 @@
-// src/api/axiosClient.ts
 import axios from "axios";
 import axiosWithCredentials from "./axiosWithCredentials";
 

@@ -5,7 +5,7 @@ import React, {
   useRef,
   forwardRef,
 } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   useMutation,
   useInfiniteQuery,
@@ -25,8 +25,6 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-import { v4 as uuidv4 } from "uuid";
-import { useSocketContext } from "../../context/SocketContext";
 import { AuthApi } from "../../services/authService";
 import { useAuthContext } from "../../context/AuthContext";
 import { UserApi } from "../../services/userService";
@@ -106,7 +104,6 @@ function CommonDialog({ open, onClose, signOut }) {
   }, [signOut]);
 
   useEffect(() => {
-    console.log("DATA: ", data);
     if (data) {
       setUserList((prev) => [
         ...prev,
@@ -207,10 +204,8 @@ function CommonDialog({ open, onClose, signOut }) {
     if (isSignOut) {
       signOutMutation.mutate();
     } else {
-      console.log('selectedUser :', !selectedUser);
       if (!selectedUser) return;
       if (selectedRoom) {
-        console.log('selectedRoom :', selectedRoom);
         if (selectedRoom?.status === "Requested") {
           setShowError("You already requested");
         } else if (selectedRoom?.status === "Rejected") {
@@ -256,7 +251,6 @@ function CommonDialog({ open, onClose, signOut }) {
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    console.log("user :", user);
     if (rooms && rooms.length > 0) {
       rooms.forEach((room) => {
         room.participants.forEach((participant) => {
@@ -267,7 +261,6 @@ function CommonDialog({ open, onClose, signOut }) {
         });
       });
     }
-    console.log("selectedRoom :", selectedRoom);
   };
 
   const handleRemoveSelectedUser = () => {
@@ -275,8 +268,8 @@ function CommonDialog({ open, onClose, signOut }) {
     setServerError("");
     setSearchUserName(searchUserName);
     setIsUserConfirmed(false);
-    setSelectedRoom(null)
-    setShowError(null)
+    setSelectedRoom(null);
+    setShowError(null);
   };
 
   const Loader = () => (
@@ -426,7 +419,13 @@ function CommonDialog({ open, onClose, signOut }) {
                   />
                 </>
               ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", width:"240px" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    width: "240px",
+                  }}
+                >
                   <Chip
                     sx={{ padding: "8px", height: "fit-content" }}
                     avatar={

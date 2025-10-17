@@ -12,7 +12,6 @@ const roomSlice = createSlice({
   reducers: {
     updateUnreadCount: (state, action) => {
       const { roomId, unreadCounts } = action.payload;
-      console.log("roomId STATE---------:", roomId, unreadCounts);
       state.unreadCounts[roomId] = +unreadCounts[roomId] || 0;
     },
     clearUnread: (state, action) => {

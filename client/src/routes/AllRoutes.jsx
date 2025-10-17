@@ -3,10 +3,8 @@ import {
   Routes,
   Route,
   Navigate,
-  Outlet,
 } from "react-router-dom";
 import Chat from "../components/Chat";
-import ChatBox from "../components/ChatBox";
 import NoUserFallback from "../components/NoUserFallBack";
 import { PublicRoute, ProtectedRoute } from "./PublicPrivateRoute";
 import NotFound from "../components/NotFound";

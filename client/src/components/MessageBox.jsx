@@ -1,26 +1,11 @@
 import React from "react";
-import {
-  Card,
-  Container,
-  Avatar,
-  AppBar,
-  Toolbar,
-  Typography,
-  Box,
-  Fab,
-  Fade,
-  InputBase,
-  IconButton,
-  Paper,
-  Divider,
-} from "@mui/material";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { useAuthContext } from "../context/AuthContext";
+import { Typography, Box, Paper } from "@mui/material";
 
 function MessageBox({ message, handleScroll }) {
-
   const looksLikeCode = (text) =>
-  /[{;}=<>[\]]/.test(text) || text.includes("function") || text.includes("=>");
+    /[{;}=<>[\]]/.test(text) ||
+    text.includes("function") ||
+    text.includes("=>");
 
   // const { authUser } = useAuthContext();
   const userId = localStorage.getItem("userId");
@@ -103,7 +88,9 @@ function MessageBox({ message, handleScroll }) {
                     fontSize: "13px",
                     whiteSpace: "pre-wrap", // 👈 preserves newlines and spaces
                     // wordBreak: "break-word",
-                    fontFamily: looksLikeCode(message.message) ? "monospace" : "inherit",
+                    fontFamily: looksLikeCode(message.message)
+                      ? "monospace"
+                      : "inherit",
                   }}
                 >
                   {message.message}
@@ -177,7 +164,9 @@ function MessageBox({ message, handleScroll }) {
                   fontSize: looksLikeCode(message.message) ? "14px" : "15px",
                   whiteSpace: "pre-wrap", // 👈 preserves newlines and spaces
                   wordBreak: "break-word",
-                   fontFamily: looksLikeCode(message.message) ? "monospace" : "inherit",
+                  fontFamily: looksLikeCode(message.message)
+                    ? "monospace"
+                    : "inherit",
                 }}
               >
                 {message.message}

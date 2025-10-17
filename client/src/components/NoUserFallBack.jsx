@@ -4,7 +4,7 @@ import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
 import { motion } from "framer-motion";
 import CommonDialog from "./common/CommonDialog";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 const NoUserFallback = () => {
   const [openDialog, setOpenDialog] = useState(false);
@@ -12,9 +12,7 @@ const NoUserFallback = () => {
 
   const userName = localStorage.getItem("userName");
 
-  const { rooms, unreadCounts, error, loading } = useSelector(
-    (state) => state.rooms
-  );
+  const { rooms } = useSelector((state) => state.rooms);
 
   useEffect(() => {
     rooms.forEach((room) => {
@@ -33,8 +31,7 @@ const NoUserFallback = () => {
     setOpenDialog(false);
   };
 
-  const Icon =
-   userAvailable ? ChatBubbleIcon : ChatBubbleOutlineIcon;
+  const Icon = userAvailable ? ChatBubbleIcon : ChatBubbleOutlineIcon;
   return (
     <Box
       sx={{
@@ -62,9 +59,7 @@ const NoUserFallback = () => {
       </motion.div>
 
       <Typography variant="h5" sx={{ mt: 3, fontWeight: "bold" }}>
-        {userAvailable
-          ? `Hiii 👋 ${userName} ❄`
-          : "No conversations yet"}
+        {userAvailable ? `Hiii 👋 ${userName} ❄` : "No conversations yet"}
       </Typography>
       <Typography variant="body1" sx={{ color: "text.secondary", mt: 1 }}>
         {userAvailable

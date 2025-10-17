@@ -1,8 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, Badge, Typography, Box } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import UserAvatar from "./UserAvatar";
-import notificationSound from "../../assets/notification.mp3";
 import React, { useEffect, useState } from "react";
 
 const Notification = ({
@@ -16,8 +14,6 @@ const Notification = ({
 
   useEffect(() => {
     setShow(showNotification);
-    // const sound = new Audio(notificationSound);
-    // sound.play();
   }, [showNotification]);
 
   return (

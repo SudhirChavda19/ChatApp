@@ -1,13 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
-  useMutation,
-  useInfiniteQuery,
-  useQueryClient,
-  useQuery,
-} from "@tanstack/react-query";
-import {
-  Avatar,
   AppBar,
   Toolbar,
   Typography,
@@ -22,36 +16,26 @@ import {
 } from "@mui/material";
 import Picker from "emoji-picker-react";
 import { motion } from "framer-motion";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import MoodIcon from "@mui/icons-material/Mood";
 import SendIcon from "@mui/icons-material/Send";
 import WavingHandIcon from "@mui/icons-material/WavingHand";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import GifBoxOutlinedIcon from "@mui/icons-material/GifBoxOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
-import useScrollTrigger from "@mui/material/useScrollTrigger";
-import PropTypes from "prop-types";
 import MessageBox from "./MessageBox";
-import { useDBContext } from "../context/DBContext";
-import NoUserFallback from "./NoUserFallBack";
 import { useSocketContext } from "../context/SocketContext";
 import { useAuthContext } from "../context/AuthContext";
-import { v4 as uuidv4 } from "uuid";
-import { getRoomMessages, storeMessages } from "../services/messageDao";
 import UserAvatar from "./common/UserAvatar";
 import GIFPicker from "./common/GIFPicker";
 import { MessageApi } from "../services/messageService";
 import { UserApi } from "../services/userService";
 import SnackBar from "./common/SnackBar";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  updateUnreadCount,
-  updateRoom,
-  clearUnread,
-} from "../features/room/roomSlice";
+import { clearUnread } from "../features/room/roomSlice";
 import TypingIndicator from "./common/TypingIndicator";
 import { loadMessages } from "../features/message/messageThunk";
-import { addNewMessage } from "../features/message/messageSlice";
+// import { addNewMessage } from "../features/message/messageThunk";
+import { useNetworkContext } from "../context/NetworkContext";
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -73,8 +57,8 @@ function ChatBox() {
   const [unSeenMessageCount, setUnSeenMessageCount] = useState(0);
   const [userTyping, setUserTyping] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
-  const [userNavigate, setuserNavigate] = useState(null)
-  const [page, setPage] = useState(1);
+  const [pageNo, setPageNo] = useState(1);
+  const [isNewMessageReceived, setIsNewMessageReceived] = useState(false);
 
   // const [lastMessageRef, setLastMessageRef] = useState(null);
   const lastMessageRef = useRef(null);
@@ -92,24 +76,74 @@ function ChatBox() {
   const location = useLocation();
   const navigate = useNavigate();
   const { authUser } = useAuthContext();
-  const queryClient = useQueryClient();
   const dispatch = useDispatch();
+  const { isOnline } = useNetworkContext();
 
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
+  const messagesPerPage = 20;
 
   const { messagesByRoom, loading, error } = useSelector(
     (state) => state.messages
   );
+  // const data = useSelector(
+  //   (state) => state.messages
+  // );
+  // console.log('data :', data);
 
   const loadMoreMessages = () => {
-    if (hasNextPage && !loading) {
-      dispatch(loadMessages({ roomId: id, page: page + 1 }));
+    console.log("!messagesByRoom[id] :", messagesByRoom[id]);
+    console.log(
+      "Object.keys(messagesByRoom[id].pages).length :",
+      Object.keys(messagesByRoom[id].pages).length
+    );
+    console.log("pageNo :", pageNo);
+    if (Object.keys(messagesByRoom[id].pages).length < pageNo) {
+      console.log("loadMessages -----------------");
+      dispatch(loadMessages({ roomId: id, page: pageNo }));
+    } else {
+      console.log("getPreviousMessages -----------------");
+      const { pages, totalPages, messages } = messagesByRoom[id];
+      const messagesForPage = messages
+        ? messages.slice(
+            (pageNo - 1) * messagesPerPage,
+            pageNo * messagesPerPage
+          )
+        : [];
+      const { hasNextPage } = pages[pageNo];
+      setHasNextPage(hasNextPage);
+      getPreviousMessages(pageNo, messagesForPage);
     }
   };
 
+  const getPreviousMessages = (page, messages) => {
+    const cr = chatRef.current;
+    if (!cr) return;
+
+    if (!hasNextPage) {
+      setHasMore(false);
+    }
+    if (!messages || messages?.length === 0) {
+      setHasMore(false);
+      return;
+    }
+
+    setAllMessages((prev) => {
+      const existing = new Set(prev.map((m) => m._id));
+      const filtered = messages.filter((m) => !existing.has(m._id));
+      return [...filtered, ...prev];
+    });
+    requestAnimationFrame(() => {
+      const newScrollHeight = cr.scrollHeight;
+      cr.scrollTop = cr.scrollTop + (newScrollHeight - previousScrollHeight);
+    });
+    setIsLoadingOlder(false);
+  };
+
   useEffect(() => {
-    dispatch(loadMessages({ roomId: id, page: 1 }));
+    if (!messagesByRoom[id]) {
+      dispatch(loadMessages({ roomId: id, page: pageNo }));
+    }
   }, [id]);
 
   const {
@@ -128,7 +162,6 @@ function ChatBox() {
   });
 
   useEffect(() => {
-    console.log("userdata :", userData);
     if (userData && userData.data.data) {
       setUser(userData.data.data);
     }
@@ -158,7 +191,7 @@ function ChatBox() {
   //   refetchOnWindowFocus: false,
   // });
 
-  const CreateRequestMutation = useMutation({
+  const SendMessageMutation = useMutation({
     mutationFn: MessageApi.SendMessage,
     onError: (error) => {
       console.log("error :", error);
@@ -181,7 +214,6 @@ function ChatBox() {
     } else {
       if (location.state.user) {
         setStateUserId(location.state.user._id);
-        setuserNavigate(location.state.user);
       }
     }
   }, [location.state, id]);
@@ -199,45 +231,57 @@ function ChatBox() {
   }, [id]);
 
   useEffect(() => {
-    if (messagesByRoom && messagesByRoom[id]?.messages.length > 0) {
+    if (messagesByRoom && messagesByRoom[id]) {
       console.log(`messageData page:`, messagesByRoom);
-      const { page, hasNextPage, messages } = messagesByRoom[id];
+      const { pages, totalPages, messages } = messagesByRoom[id];
+      console.log("pageNo :", pageNo);
+      console.log("pages[pageNo] :", pages[pageNo]);
+      const { hasNextPage } = pages[pageNo];
       setHasNextPage(hasNextPage);
-      setPage(page);
+      // setPageNo((value) => value + 1);
 
-      if (page === 1) {
+      const messagesForPage = messages
+        ? messages.slice(
+            (pageNo - 1) * messagesPerPage,
+            pageNo * messagesPerPage
+          )
+        : [];
+      // console.log("page :", pa);
+      if (pageNo === 1) {
         setAllMessages((prev) => {
           const existing = new Set(prev.map((m) => m._id));
-          const filtered = messages.filter((m) => !existing.has(m._id));
+          const filtered = messagesForPage.filter((m) => !existing.has(m._id));
           return [...filtered, ...prev];
         });
+
         setInitialized(true);
         if (!hasNextPage) {
           setHasMore(false);
         }
-      } else if (page > 1) {
-        const cr = chatRef.current;
-        if (!cr) return;
+      } else if (pageNo > 1) {
+        getPreviousMessages(pageNo, messagesForPage);
+        //   const cr = chatRef.current;
+        //   if (!cr) return;
 
-        if (!hasNextPage) {
-          setHasMore(false);
-        }
-        if (!messages || messages?.length === 0) {
-          setHasMore(false);
-          return;
-        }
+        //   if (!hasNextPage) {
+        //     setHasMore(false);
+        //   }
+        //   if (!messages || messages?.length === 0) {
+        //     setHasMore(false);
+        //     return;
+        //   }
 
-        setAllMessages((prev) => {
-          const existing = new Set(prev.map((m) => m._id));
-          const filtered = messages.filter((m) => !existing.has(m._id));
-          return [...filtered, ...prev];
-        });
-        requestAnimationFrame(() => {
-          const newScrollHeight = cr.scrollHeight;
-          cr.scrollTop =
-            cr.scrollTop + (newScrollHeight - previousScrollHeight);
-        });
-        setIsLoadingOlder(false);
+        //   setAllMessages((prev) => {
+        //     const existing = new Set(prev.map((m) => m._id));
+        //     const filtered = messages.filter((m) => !existing.has(m._id));
+        //     return [...filtered, ...prev];
+        //   });
+        //   requestAnimationFrame(() => {
+        //     const newScrollHeight = cr.scrollHeight;
+        //     cr.scrollTop =
+        //       cr.scrollTop + (newScrollHeight - previousScrollHeight);
+        //   });
+        //   setIsLoadingOlder(false);
       }
     }
     if (error) {
@@ -254,6 +298,7 @@ function ChatBox() {
       console.log("message ::", data);
 
       if (id === data.roomId) {
+        setIsNewMessageReceived(true);
         setAllMessages((prev) => {
           if (prev.some((m) => m._id === data._id)) return prev;
           return [...prev, data];
@@ -271,8 +316,8 @@ function ChatBox() {
             }
           }, 50);
         }
+        // dispatch(addNewMessage({ roomId: data.roomId, newMessage: data }));
       }
-      dispatch(addNewMessage({ roomId: data.roomId, newMessage: data }));
     });
     return () => {
       socket.off("send-receive-message");
@@ -337,7 +382,7 @@ function ChatBox() {
     }
 
     if ((message.trim() || gifUrl) && authUser && stateUserId) {
-      CreateRequestMutation.mutate({
+      SendMessageMutation.mutate({
         receiverId: stateUserId,
         senderId: userId,
         senderName: userName,
@@ -391,18 +436,20 @@ function ChatBox() {
       }
     }, 500);
   };
-
+  
   const loadOlderMessages = async () => {
     const cr = chatRef.current;
     if (!cr) return;
     setIsLoadingOlder(true);
-
+    
     try {
+      setPageNo((prev) => prev + 1);
+      console.log('setPageNo :-------');
       const prevScrollHeight = cr.scrollHeight;
       setPreviousScrollHeight(prevScrollHeight);
-      setTimeout(async () => {
-        await loadMoreMessages();
-      }, 600);
+      setTimeout(() => {
+        loadMoreMessages();
+      }, 500);
     } catch (error) {
       console.error("error loading older messages", error);
     }
@@ -698,7 +745,7 @@ function ChatBox() {
           <IconButton
             type="button"
             aria-label="send"
-            disabled={!message.trim() && !gifUrl}
+            disabled={(!message.trim() && !gifUrl) || !isOnline}
             onClick={handleSubmit}
             sx={{
               backgroundColor: "#f3f3f3",
@@ -707,7 +754,11 @@ function ChatBox() {
               // marginBottom: "4px",
             }}
           >
-            <SendIcon color={message.trim() || gifUrl ? "primary" : "light"} />
+            <SendIcon
+              color={
+                (message.trim() || gifUrl) && isOnline ? "primary" : "light"
+              }
+            />
           </IconButton>
           <SnackBar
             setHorizontal={"center"}

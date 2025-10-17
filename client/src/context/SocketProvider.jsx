@@ -7,7 +7,6 @@ import { useAuthContext } from "./AuthContext";
 export const SocketContextProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const { authUser } = useAuthContext();
-  // const [onlineUsers, setOnlineUsers] = useState([]);
 
   const userId = localStorage.getItem("userId");
 
@@ -21,11 +20,6 @@ export const SocketContextProvider = ({ children }) => {
       });
 
       setSocket(newSocket);
-
-      // socket.on() is used to listen to the events. can be used both on client and server side
-      // socket.on("getOnlineUsers", (users) => {
-      // 	setOnlineUsers(users);
-      // });
 
     } else {
       if (socket) {

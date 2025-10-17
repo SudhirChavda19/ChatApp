@@ -4,14 +4,26 @@ import { loadMessages } from "./messageThunk";
 const messageSlice = createSlice({
   name: "messages",
   initialState: {
-    messagesByRoom: {}, // { [roomId]: { messages: [], page: 1, totalPages: 0, hasNextPage: false } }
+    messagesByRoom: {}, // { [roomId]: { messages: [], pages: {1: hasNextPage }, totalPages } }
     loading: false,
     error: null,
   },
-  reducers:{
+  reducers: {
     addNewMessage: (state, action) => {
-      const {roomId, newMessage} = action.payload;
-      state.messagesByRoom[roomId].messages.push(newMessage);
+      const { roomId, newMessage } = action.payload;
+      const room = state.messagesByRoom[roomId];
+      if (room) {
+        room.messages.push(newMessage);
+        // Sort if needed
+        // room.messages.sort(
+        //   (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        // );
+      }
+    },
+
+    clearMessages: (state, action) => {
+      const { roomId } = action.payload;
+      delete state.messagesByRoom[roomId];
     },
   },
   extraReducers: (builder) => {
@@ -21,33 +33,31 @@ const messageSlice = createSlice({
         state.error = null;
       })
       .addCase(loadMessages.fulfilled, (state, action) => {
-        const { roomId, messages, page, totalPages, hasNextPage } =
+        const { roomId, page, messages, hasNextPage, totalPages } =
           action.payload;
+
         if (!state.messagesByRoom[roomId]) {
-          // initialize new room entry
           state.messagesByRoom[roomId] = {
             messages: [],
-            page: 1,
-            totalPages: 0,
-            hasNextPage: false,
+            pages: {},
+            totalPages: totalPages || 0,
           };
         }
 
-        const roomData = state.messagesByRoom[roomId];
+        const room = state.messagesByRoom[roomId];
 
-        // Append or replace messages depending on page
+        // Prepend older messages if not the first page
         if (page === 1) {
-          // first page → replace
-          roomData.messages = messages;
-        } else {
-          // next page → prepend older messages (assuming pagination goes older)
-          roomData.messages = [...messages, ...roomData.messages];
+          room.messages = messages;
+        } else if (page > 1) {
+          room.messages = [...messages, ...room.messages];
         }
 
-        roomData.page = page;
-        roomData.totalPages = totalPages;
-        roomData.hasNextPage = hasNextPage;
-
+        // Update pagination metadata
+        room.pages[page] = {
+          hasNextPage,
+        };
+        room.totalPages = totalPages;
         state.loading = false;
       })
       .addCase(loadMessages.rejected, (state, action) => {
@@ -57,6 +67,9 @@ const messageSlice = createSlice({
   },
 });
 
-export const { addNewMessage } =
-  messageSlice.actions;
+export const {
+  addNewMessage,
+  clearMessages,
+} = messageSlice.actions;
+
 export default messageSlice.reducer;

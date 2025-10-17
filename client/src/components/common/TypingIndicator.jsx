@@ -3,11 +3,10 @@ import { Box, Paper, Stack, useTheme } from "@mui/material";
 
 function TypingIndicator() {
   const theme = useTheme();
-  
+
   return (
     <>
       <Box
-        // onScroll={handleScroll}
         sx={{
           display: "flex",
           justifyContent: "flex-start",
@@ -31,12 +30,8 @@ function TypingIndicator() {
             alignItems="center"
             justifyContent="flex-start"
             sx={{
-            //   backgroundColor: theme.palette.grey[200],
               borderRadius: "12px",
-            //   px: 1.5,
-            //   py: 0.8,
               width: "fit-content",
-            //   mt: 1,
             }}
           >
             <Box

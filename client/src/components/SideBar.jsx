@@ -1,34 +1,23 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
   ListItemButton,
-  ListItemAvatar,
-  Avatar,
   IconButton,
   Divider,
   Box,
   Typography,
-  ClickAwayListener,
   Tooltip,
-  Skeleton,
 } from "@mui/material";
-import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import ChatIcon from "@mui/icons-material/Chat";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
-import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
-import CheckIcon from "@mui/icons-material/Check";
-import ClearIcon from "@mui/icons-material/Clear";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import SettingsIcon from "@mui/icons-material/Settings";
 import { useDBContext } from "../context/DBContext";
 import CommonDialog from "./common/CommonDialog";
 import { useSocketContext } from "../context/SocketContext";
@@ -41,7 +30,6 @@ import { loadRooms } from "../features/room/roomThunk";
 import { updateUnreadCount, updateRoom } from "../features/room/roomSlice";
 
 function SideBar() {
-  const [roomList, setRoomList] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [openSignOutDialog, setOpenSignOutDialog] = useState(false);
   const [openProfileDialog, setOpenProfileDialog] = useState(false);
@@ -50,8 +38,6 @@ function SideBar() {
   // const [loading, setLoading] = useState(true);
 
   const socket = useSocketContext();
-  const db = useDBContext();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { id } = useParams();
 
@@ -117,7 +103,6 @@ function SideBar() {
       // }
     },
     onSuccess: async (data) => {
-      console.log("data :", data);
       if (data.status === 201) {
         queryClient.removeQueries({
           queryKey: ["users", userId],
@@ -138,7 +123,6 @@ function SideBar() {
       // }
     },
     onSuccess: async (data) => {
-      console.log("data :", data);
       if (data.status === 201) {
         queryClient.removeQueries({
           queryKey: ["users", userId],
@@ -151,10 +135,8 @@ function SideBar() {
 
   useEffect(() => {
     socket.on("updated-room", ({ senderId, updatedRoom, unreadCounts }) => {
-      console.log('updatedRoom :', updatedRoom);
-      console.log('id :', id);
-      if (updatedRoom._id !== id) {
-        console.log("unreadCounts :", unreadCounts);
+    console.log('unreadCounts :', unreadCounts);
+      if (userId !== senderId) {
         dispatch(updateUnreadCount({ roomId: updatedRoom._id, unreadCounts }));
       }
       dispatch(updateRoom(updatedRoom));
@@ -293,15 +275,14 @@ function SideBar() {
               <PersonAddAltIcon color="primary" />
             </IconButton>
             {openDialog && (
-              <CommonDialog
-                open={openDialog}
-                onClose={handleClickClose}
-              />
+              <CommonDialog open={openDialog} onClose={handleClickClose} />
             )}
           </Tooltip>
         </ListItem>
         <Divider component="li" />
-        <ListItem sx={{ padding: "8px 16px", width: "100%", margin: "0px auto" }}>
+        <ListItem
+          sx={{ padding: "8px 16px", width: "100%", margin: "0px auto" }}
+        >
           {/* <Tabs
             value={tabValue}
             onChange={handleTabChange}

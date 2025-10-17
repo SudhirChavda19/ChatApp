@@ -1,19 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  List,
   ListItem,
-  ListItemIcon,
   ListItemText,
   ListItemButton,
   ListItemAvatar,
-  Avatar,
   IconButton,
-  Divider,
   Box,
   Typography,
   Tooltip,
-  Skeleton,
   Badge,
 } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
@@ -22,7 +17,6 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import { useSocketContext } from "../context/SocketContext";
 import UserAvatar from "./common/UserAvatar";
-import { useDispatch, useSelector } from "react-redux";
 
 function ListUser({
   roomData,
@@ -36,9 +30,13 @@ function ListUser({
   const [showDeleteIcon, setShowDeleteIcon] = useState(false);
   const [online, setOnline] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [roomParamId, setRoomParamId] = useState(null);
   const navigate = useNavigate();
-  const { id } = useParams();
   const socket = useSocketContext();
+  const { id } = useParams();
+  useEffect(() => {
+      setRoomParamId(id);
+    }, [id])
 
   const userId = localStorage.getItem("userId");
 
@@ -81,21 +79,7 @@ function ListUser({
     });
   }, [socket, user]);
 
-  // useEffect(() => {
-  //     socket.on("request-accept-reject", (data) => {
-  //     console.log('request-accept-reject :', data);
-  //     if(data && data._id === room._id){
-
-  //     }
-  //       // setRoomList((users) => [...users, user]);
-  //       // (async () => {
-  //       //   await refetch();
-  //       // })
-  //     });
-  //   }, [socket]);
-
   const handleOpenUserChat = () => {
-    console.log("handleOpenUserChat :", user);
     navigate(`/chat/room/${room._id}`, { state: { user } });
     setSelectedUser(room._id === id ? true : false);
   };
@@ -107,14 +91,6 @@ function ListUser({
   const handleDeleteRoom = (roomId) => {
     handleRemoveRoom(roomId);
   };
-
-  //   if (!user)
-  //     return (
-
-  //       <ListItem>
-  //         <Skeleton />
-  //       </ListItem>
-  //     );
 
   if (room.status === "Requested" || room.status === "Rejected")
     return (

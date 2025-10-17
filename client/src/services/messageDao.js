@@ -9,7 +9,6 @@ export const storeMessages = async (data, db) => {
   tx.oncomplete = () => {
   };
   tx.onerror = (error) => {
-    // console.log("Error while store message: ", error);
     throw new Error("Error while store message: ", error);
   };
 };
@@ -39,7 +38,6 @@ export const getRoomMessages = async (roomid, db, beforeTimestamp) => {
         }
       };
       request.onerror = (error) => {
-        console.log("error :", error);
         reject(new Error("Error while get requested users", error));
       };
     } catch (error) {

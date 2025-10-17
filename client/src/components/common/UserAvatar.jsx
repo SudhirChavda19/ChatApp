@@ -29,7 +29,7 @@ export default function UserAvatar({ name, size }) {
   };
 
   useEffect(() => {
-    if(name){
+    if (name) {
       setRandomColor(generateUserColors(name));
     }
   }, [name]);

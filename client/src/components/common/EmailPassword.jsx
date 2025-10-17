@@ -10,9 +10,7 @@ import {
   Box,
   IconButton,
   InputAdornment,
-  // Snackbar
 } from "@mui/material";
-import { v4 as uuidv4 } from "uuid";
 import { useAuthContext } from "../../context/AuthContext";
 import {
   emailValidate,
@@ -78,7 +76,6 @@ function EmailPassword() {
       }
     },
     onSuccess: async (data) => {
-      console.log("data :", data);
       if (data.status === 200) {
         const { _id, userName } = data.data.data;
         queryClient.invalidateQueries({ queryKey: ["user", "profile"] });
@@ -90,33 +87,31 @@ function EmailPassword() {
         localStorage.setItem("userId", _id);
         localStorage.setItem("userName", userName);
         setAuthUser(true);
-        const token = await grantNotificationPermissionAndGenerateFcmToken();
-        console.log("token :", token);
-        if (token) {
-          await storeTokenMutation.mutate({
-            id: _id,
-            data: { fcmToken: token },
-          });
-        }
+        // if (token) {
+        //   await storeTokenMutation.mutate({
+        //     id: _id,
+        //     data: { fcmToken: token },
+        //   });
+        // }
         navigate("/chat", { replace: true });
       }
     },
   });
-  const storeTokenMutation = useMutation({
-    mutationFn: UserApi.UpdateUser,
-    onError: (error) => {
-      console.log("error :", error.response.data);
-      const { message, status } = error.response.data;
-      if (status === "Fail") {
-        setServerError(message);
-      }
-    },
-    onSuccess: (data) => {
-      if (data.status === 201 && data.data.data) {
-        console.log("data.data.data :", data.data.data);
-      }
-    },
-  });
+  // const storeTokenMutation = useMutation({
+  //   mutationFn: UserApi.UpdateUser,
+  //   onError: (error) => {
+  //     console.log("error :", error.response.data);
+  //     const { message, status } = error.response.data;
+  //     if (status === "Fail") {
+  //       setServerError(message);
+  //     }
+  //   },
+  //   onSuccess: (data) => {
+  //     // if (data.status === 201 && data.data.data) {
+  //     //   console.log("data.data.data :", data.data.data);
+  //     // }
+  //   },
+  // });
 
   const forgotPasswordMutation = useMutation({
     mutationFn: AuthApi.ForgotPasswordService,
@@ -129,9 +124,7 @@ function EmailPassword() {
       }
     },
     onSuccess: (data) => {
-      console.log("RES=======: ", data);
       if (data.status === 201) {
-        console.log("navigate :", navigate);
         navigate("/sign-in", { replace: true });
       }
     },
@@ -151,6 +144,9 @@ function EmailPassword() {
       new Audio(notificationSound).play().catch((e) => {
         console.log("Audio blocked until user interacts", e);
       });
+      const token = await grantNotificationPermissionAndGenerateFcmToken();
+      console.log('token :', token);
+      data.fcmToken = token;
       await userSignIn(data);
     } else if (path === "/forgot-password") {
       await userForgotPassword(data);

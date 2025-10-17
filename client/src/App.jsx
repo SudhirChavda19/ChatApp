@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AllRoutes from "./routes/AllRoutes";
-import { messaging, getToken, onMessage } from "./firebase";
+import { messaging, onMessage } from "./firebase";
 import Notification from "./components/common/Notification";
 import notificationSound from "./assets/notification.mp3";
 
@@ -40,7 +40,7 @@ function App() {
     }
 
     const unsubscribe = onMessage(messaging, (payload) => {
-      console.log("Message received: ", payload);
+      // console.log("Message received: ", payload);
       const sound = new Audio(notificationSound);
           sound.play();
 
@@ -64,7 +64,7 @@ function App() {
       setTimeout(() => setNotification({show: false}), 4000);
     });
 
-    return () => unsubscribe(); // cleanup
+    return () => unsubscribe();
   }, []);
 
   return (
