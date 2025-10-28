@@ -11,7 +11,7 @@ const sendNotification = async (body) => {
           title: senderName || "New Message",
           body: message ? `${message}` : "" ,
         },
-        data: {gifUrl: gifUrl || ""},  
+        data: {gifUrl: gifUrl || "", roomId},  
         token: receiver.fcmToken,
       };
 

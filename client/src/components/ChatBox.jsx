@@ -36,6 +36,7 @@ import TypingIndicator from "./common/TypingIndicator";
 import { loadMessages } from "../features/message/messageThunk";
 // import { addNewMessage } from "../features/message/messageThunk";
 import { useNetworkContext } from "../context/NetworkContext";
+import { addNewMessage } from "../features/message/messageSlice";
 
 function ChatBox() {
   const [user, setUser] = useState({});
@@ -51,16 +52,17 @@ function ChatBox() {
   const [hasMore, setHasMore] = useState(true);
   const [online, setOnline] = useState(false);
   const [messageServerError, setMessageServerError] = useState(null);
-  const [previousScrollHeight, setPreviousScrollHeight] = useState(null);
+  // const [previousScrollHeight, setPreviousScrollHeight] = useState(null);
   const [initialized, setInitialized] = useState(false);
   const [openSnackBar, setOpenSnackBar] = useState(false);
   const [unSeenMessageCount, setUnSeenMessageCount] = useState(0);
   const [userTyping, setUserTyping] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
-  const [pageNo, setPageNo] = useState(1);
+  // const [pageNo, setPageNo] = useState(1);
   const [isNewMessageReceived, setIsNewMessageReceived] = useState(false);
 
   // const [lastMessageRef, setLastMessageRef] = useState(null);
+  // let pageNo = 1;
   const lastMessageRef = useRef(null);
 
   const chatRef = useRef(null);
@@ -70,6 +72,8 @@ function ChatBox() {
   const showNewMsgButtonRef = useRef(showNewMsgButton);
   const userTypingRef = useRef(userTyping);
   const typingTimeoutRef = useRef(null);
+  const pageNoRef = useRef(1);
+  const previousScrollHeightRef = useRef(null);
 
   const socket = useSocketContext();
   const { id } = useParams();
@@ -82,42 +86,37 @@ function ChatBox() {
   const userId = localStorage.getItem("userId");
   const userName = localStorage.getItem("userName");
   const messagesPerPage = 20;
+  const cr = chatRef.current;
 
   const { messagesByRoom, loading, error } = useSelector(
     (state) => state.messages
   );
-  // const data = useSelector(
-  //   (state) => state.messages
-  // );
-  // console.log('data :', data);
 
   const loadMoreMessages = () => {
-    console.log("!messagesByRoom[id] :", messagesByRoom[id]);
-    console.log(
-      "Object.keys(messagesByRoom[id].pages).length :",
-      Object.keys(messagesByRoom[id].pages).length
-    );
-    console.log("pageNo :", pageNo);
-    if (Object.keys(messagesByRoom[id].pages).length < pageNo) {
+    console.log("pageNo :", pageNoRef.current);
+    if (
+      Object.keys(messagesByRoom[id].cachedPages).length < pageNoRef.current
+    ) {
       console.log("loadMessages -----------------");
-      dispatch(loadMessages({ roomId: id, page: pageNo }));
+      dispatch(loadMessages({ roomId: id, page: pageNoRef.current }));
     } else {
       console.log("getPreviousMessages -----------------");
-      const { pages, totalPages, messages } = messagesByRoom[id];
-      const messagesForPage = messages
-        ? messages.slice(
-            (pageNo - 1) * messagesPerPage,
-            pageNo * messagesPerPage
-          )
-        : [];
-      const { hasNextPage } = pages[pageNo];
+      const { latestMessages, totalPages, cachedPages } = messagesByRoom[id];
+      // const messagesForPage = messages
+      //   ? messages.slice(
+      //       (pageNoRef.current - 1) * messagesPerPage,
+      //       pageNoRef.current * messagesPerPage
+      //     )
+      //   : [];
+      const messagesForPage = cachedPages[pageNoRef.current].messages;
+      const hasNextPage = cachedPages[pageNoRef.current].hasNextPage;
       setHasNextPage(hasNextPage);
-      getPreviousMessages(pageNo, messagesForPage);
+      getPreviousMessages(messagesForPage);
     }
   };
 
-  const getPreviousMessages = (page, messages) => {
-    const cr = chatRef.current;
+  const getPreviousMessages = (messages) => {
+    // const cr = chatRef.current;
     if (!cr) return;
 
     if (!hasNextPage) {
@@ -135,14 +134,17 @@ function ChatBox() {
     });
     requestAnimationFrame(() => {
       const newScrollHeight = cr.scrollHeight;
-      cr.scrollTop = cr.scrollTop + (newScrollHeight - previousScrollHeight);
+      cr.scrollTop =
+        cr.scrollTop + (newScrollHeight - previousScrollHeightRef.current);
     });
     setIsLoadingOlder(false);
   };
 
   useEffect(() => {
-    if (!messagesByRoom[id]) {
-      dispatch(loadMessages({ roomId: id, page: pageNo }));
+    if (id) {
+      sessionStorage.setItem("roomId", id)
+      if (!messagesByRoom[id])
+        dispatch(loadMessages({ roomId: id, page: pageNoRef.current }));
     }
   }, [id]);
 
@@ -233,21 +235,19 @@ function ChatBox() {
   useEffect(() => {
     if (messagesByRoom && messagesByRoom[id]) {
       console.log(`messageData page:`, messagesByRoom);
-      const { pages, totalPages, messages } = messagesByRoom[id];
-      console.log("pageNo :", pageNo);
-      console.log("pages[pageNo] :", pages[pageNo]);
-      const { hasNextPage } = pages[pageNo];
+      const { latestMessages, totalPages, cachedPages } = messagesByRoom[id];
+      const messagesForPage = cachedPages[pageNoRef.current].messages;
+      const hasNextPage = cachedPages[pageNoRef.current].hasNextPage;
       setHasNextPage(hasNextPage);
-      // setPageNo((value) => value + 1);
 
-      const messagesForPage = messages
-        ? messages.slice(
-            (pageNo - 1) * messagesPerPage,
-            pageNo * messagesPerPage
-          )
-        : [];
-      // console.log("page :", pa);
-      if (pageNo === 1) {
+      if (pageNoRef.current === 1) {
+        if (latestMessages && latestMessages.length > 0) {
+          setAllMessages((prev) => {
+            const existing = new Set(prev.map((m) => m._id));
+            const filtered = latestMessages.filter((m) => !existing.has(m._id));
+            return [...prev, ...filtered];
+          });
+        }
         setAllMessages((prev) => {
           const existing = new Set(prev.map((m) => m._id));
           const filtered = messagesForPage.filter((m) => !existing.has(m._id));
@@ -258,30 +258,8 @@ function ChatBox() {
         if (!hasNextPage) {
           setHasMore(false);
         }
-      } else if (pageNo > 1) {
-        getPreviousMessages(pageNo, messagesForPage);
-        //   const cr = chatRef.current;
-        //   if (!cr) return;
-
-        //   if (!hasNextPage) {
-        //     setHasMore(false);
-        //   }
-        //   if (!messages || messages?.length === 0) {
-        //     setHasMore(false);
-        //     return;
-        //   }
-
-        //   setAllMessages((prev) => {
-        //     const existing = new Set(prev.map((m) => m._id));
-        //     const filtered = messages.filter((m) => !existing.has(m._id));
-        //     return [...filtered, ...prev];
-        //   });
-        //   requestAnimationFrame(() => {
-        //     const newScrollHeight = cr.scrollHeight;
-        //     cr.scrollTop =
-        //       cr.scrollTop + (newScrollHeight - previousScrollHeight);
-        //   });
-        //   setIsLoadingOlder(false);
+      } else if (pageNoRef.current > 1) {
+        getPreviousMessages(messagesForPage);
       }
     }
     if (error) {
@@ -316,7 +294,7 @@ function ChatBox() {
             }
           }, 50);
         }
-        // dispatch(addNewMessage({ roomId: data.roomId, newMessage: data }));
+        dispatch(addNewMessage({ roomId: data.roomId, newMessage: data }));
       }
     });
     return () => {
@@ -414,7 +392,7 @@ function ChatBox() {
   };
 
   const handleScroll = async () => {
-    const cr = chatRef.current;
+    // const cr = chatRef.current;
     if (!cr) return;
 
     if (scrollDebounceRef.current)
@@ -436,17 +414,15 @@ function ChatBox() {
       }
     }, 500);
   };
-  
+
   const loadOlderMessages = async () => {
-    const cr = chatRef.current;
+    // const cr = chatRef.current;
     if (!cr) return;
     setIsLoadingOlder(true);
-    
+
     try {
-      setPageNo((prev) => prev + 1);
-      console.log('setPageNo :-------');
-      const prevScrollHeight = cr.scrollHeight;
-      setPreviousScrollHeight(prevScrollHeight);
+      pageNoRef.current += 1;
+      previousScrollHeightRef.current = cr.scrollHeight;
       setTimeout(() => {
         loadMoreMessages();
       }, 500);

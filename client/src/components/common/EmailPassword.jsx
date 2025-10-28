@@ -145,7 +145,7 @@ function EmailPassword() {
         console.log("Audio blocked until user interacts", e);
       });
       const token = await grantNotificationPermissionAndGenerateFcmToken();
-      console.log('token :', token);
+      console.log("token :", token);
       data.fcmToken = token;
       await userSignIn(data);
     } else if (path === "/forgot-password") {

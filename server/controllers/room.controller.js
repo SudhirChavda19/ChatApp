@@ -54,7 +54,6 @@ const GetRoomByUser = async (req, res) => {
     const rooms = await getRoomsByUserId(id);
 
     const unreadData = await redisClient.hGetAll(`unread:${id}`);
-    console.log('unreadData :', unreadData);
     // convert all values to numbers
     const unreadCounts = Object.fromEntries(
       Object.entries(unreadData).map(([roomId, count]) => [roomId, Number(count)])

@@ -4,6 +4,7 @@ import UserAvatar from "./UserAvatar";
 import React, { useEffect, useState } from "react";
 
 const Notification = ({
+  roomId,
   title,
   message,
   gifUrl,
@@ -12,9 +13,15 @@ const Notification = ({
 }) => {
   const [show, setShow] = useState(false);
 
+  const id = sessionStorage.getItem("roomId")
+  
   useEffect(() => {
-    setShow(showNotification);
-  }, [showNotification]);
+    if (id && roomId && id === roomId) {
+      setShow(false);
+    } else {
+      setShow(showNotification);
+    }
+  }, [id, roomId]);
 
   return (
     <AnimatePresence>

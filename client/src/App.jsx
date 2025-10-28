@@ -40,9 +40,9 @@ function App() {
     }
 
     const unsubscribe = onMessage(messaging, (payload) => {
-      // console.log("Message received: ", payload);
-      const sound = new Audio(notificationSound);
-          sound.play();
+      console.log("Message received: ", payload);
+      // const sound = new Audio(notificationSound);
+      //     sound.play();
 
       // Customize notification data
       if (document.visibilityState === "visible") {
@@ -50,6 +50,7 @@ function App() {
           title: payload.notification?.title || "New Message",
           body: payload.notification?.body || undefined,
           gifUrl: payload?.data?.gifUrl ? payload.data.gifUrl : undefined,
+          roomId: payload?.data?.roomId ? payload.data.roomId : undefined,
           show: true
         });
       }
@@ -61,7 +62,7 @@ function App() {
       //   });
       // }
 
-      setTimeout(() => setNotification({show: false}), 4000);
+      setTimeout(() => setNotification({show: false}), 8000);
     });
 
     return () => unsubscribe();
@@ -73,6 +74,7 @@ function App() {
 
       {notification && (
         <Notification
+          roomId={notification.roomId}
           title={notification.title}
           message={notification.body}
           gifUrl={notification.gifUrl}
