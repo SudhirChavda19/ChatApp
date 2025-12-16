@@ -19,13 +19,17 @@ const roomSlice = createSlice({
     },
     updateRoom: (state, action) => {
       const updatedRoom = action.payload;
-      // 1️⃣ Remove old room entry
       const room = state.rooms.filter((r) => r._id === updatedRoom._id)[0];
       state.rooms = state.rooms.filter((r) => r._id !== updatedRoom._id);
       room.updatedAt = updatedRoom.updatedAt;
-      // 2️⃣ Insert updated room at the top
       state.rooms.unshift(room);
     },
+    clearData: (state) => {
+      state.rooms = [];
+      delete state.unreadCounts;
+      state.loading = false;
+      state.error = null;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -46,5 +50,5 @@ const roomSlice = createSlice({
   },
 });
 
-export const { updateUnreadCount, clearUnread, updateRoom } = roomSlice.actions;
+export const { updateUnreadCount, clearUnread, updateRoom, clearData } = roomSlice.actions;
 export default roomSlice.reducer;

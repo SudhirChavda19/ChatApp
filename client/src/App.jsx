@@ -62,7 +62,7 @@ function App() {
       //   });
       // }
 
-      setTimeout(() => setNotification({show: false}), 8000);
+      setTimeout(() => setNotification({show: false}), 5000);
     });
 
     return () => unsubscribe();

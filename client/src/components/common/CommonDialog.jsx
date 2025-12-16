@@ -30,7 +30,9 @@ import { useAuthContext } from "../../context/AuthContext";
 import { UserApi } from "../../services/userService";
 import UserAvatar from "./UserAvatar";
 import { RoomApi } from "../../services/roomService";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { clearMessages } from "../../features/message/messageSlice";
+import { clearData } from "../../features/room/roomSlice";
 
 function CommonDialog({ open, onClose, signOut }) {
   const [searchUserName, setSearchUserName] = useState("");
@@ -48,6 +50,7 @@ function CommonDialog({ open, onClose, signOut }) {
   const navigate = useNavigate();
   const { setAuthUser } = useAuthContext();
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
   const userId = localStorage.getItem("userId");
 
@@ -151,6 +154,8 @@ function CommonDialog({ open, onClose, signOut }) {
         localStorage.removeItem("userId");
         localStorage.removeItem("userName");
         setAuthUser(false);
+        dispatch(clearMessages());
+        dispatch(clearData());
         navigate("/sign-in", { replace: true });
         handleClose();
       }
@@ -298,7 +303,7 @@ function CommonDialog({ open, onClose, signOut }) {
               {!selectedUser ? (
                 <>
                   <DialogContentText>
-                    Are you sure you want to sign out
+                   Search User by Name to make Request
                   </DialogContentText>
                   <Autocomplete
                     freeSolo

@@ -142,8 +142,8 @@ function ChatBox() {
 
   useEffect(() => {
     if (id) {
-      sessionStorage.setItem("roomId", id)
-      if (!messagesByRoom[id])
+      sessionStorage.setItem("roomId", id);
+      if (!(Object.keys(messagesByRoom).length !== 0 && messagesByRoom[id]))
         dispatch(loadMessages({ roomId: id, page: pageNoRef.current }));
     }
   }, [id]);
@@ -233,8 +233,12 @@ function ChatBox() {
   }, [id]);
 
   useEffect(() => {
+    console.log(`messageData page:`, messagesByRoom);
+    if (isNewMessageReceived) {
+      setIsNewMessageReceived(false);
+      return;
+    }
     if (messagesByRoom && messagesByRoom[id]) {
-      console.log(`messageData page:`, messagesByRoom);
       const { latestMessages, totalPages, cachedPages } = messagesByRoom[id];
       const messagesForPage = cachedPages[pageNoRef.current].messages;
       const hasNextPage = cachedPages[pageNoRef.current].hasNextPage;

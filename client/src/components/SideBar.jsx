@@ -135,7 +135,6 @@ function SideBar() {
 
   useEffect(() => {
     socket.on("updated-room", ({ senderId, updatedRoom, unreadCounts }) => {
-    console.log('unreadCounts :', unreadCounts);
       if (userId !== senderId) {
         dispatch(updateUnreadCount({ roomId: updatedRoom._id, unreadCounts }));
       }
@@ -330,8 +329,8 @@ function SideBar() {
                 maxWidth: 360,
                 bgcolor: "background.paper",
                 position: "relative",
-                overflow: "auto",
-                maxHeight: 350,
+                overflowY: "auto",
+                maxHeight: 350, 
                 padding: 0,
                 "&::-webkit-scrollbar": {
                   display: "none",
@@ -410,6 +409,7 @@ function SideBar() {
         sx={{
           position: "absolute",
           bottom: 0,
+          backgroundColor: "white",
           padding: 0,
           width: "100%",
           maxWidth: 360,

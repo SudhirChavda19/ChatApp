@@ -16,11 +16,11 @@ const sendMessage = async (req, res) => {
       gifUrl,
       roomId,
       senderId,
-    });
+    }, res);
 
     if (newMessage) {
       io.to(roomId).emit("send-receive-message", newMessage);
-      const updatedRoom = await updateRoomOnSendMessage(roomId);
+      const updatedRoom = await updateRoomOnSendMessage(roomId, res);
 
       const activeRoom = await redisClient.get(`activeRoom:${receiverId}`);
       if (activeRoom && activeRoom !== roomId) {
@@ -68,7 +68,8 @@ const GetRoomMessages = async (req, res) => {
     const { messages, totalPages, hasNextPage } = await getMessagesByRoom(
       id,
       limit,
-      page
+      page,
+      res
     );
 
     return res.status(200).json({

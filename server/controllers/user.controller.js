@@ -4,6 +4,7 @@ const User = require("../models/user.model.js");
 const searchUser = async (req, res) => {
   try {
     let { username, page, limit } = req.query;
+    console.log('username :', username);
     page = Number(page) || 1;
     limit = Number(limit) || 10;
     const skip = (page - 1) * limit;
@@ -39,6 +40,7 @@ const searchUser = async (req, res) => {
     const totalPages =
       totalCount.length > 0 ? Math.ceil(totalCount[0]?.totalCount / limit) : 0;
     const hasNextPage = page < totalPages;
+    console.log('searchedUsers :', searchedUsers);
 
     return res.status(200).json({
       status: "Success",
@@ -59,7 +61,7 @@ const searchUser = async (req, res) => {
 const getUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await getUserById(id);
+    const user = await getUserById(id, res);
     if (!user) {
       return res.status(404).json({
         status: "Fail",
@@ -85,7 +87,7 @@ const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    const user = await updateUserById(id, updateData);
+    const user = await updateUserById(id, updateData, res);
     if (!user) {
       return res.status(400).json({
         status: "Fail",

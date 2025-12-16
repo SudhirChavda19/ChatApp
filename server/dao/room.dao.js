@@ -1,7 +1,7 @@
 const Room = require("../models/room.model");
 const mongoose = require("mongoose");
 
-const createRoomDao = async ({ senderId, receiverId }) => {
+const createRoomDao = async ({ senderId, receiverId }, res) => {
   try {
     const newRoom = new Room({
       participants: [senderId, receiverId],
@@ -20,7 +20,7 @@ const createRoomDao = async ({ senderId, receiverId }) => {
   }
 };
 
-const getRoomsByUserId = async (userId) => {
+const getRoomsByUserId = async (userId, res) => {
   try {
     const userObjectId = new mongoose.Types.ObjectId(userId);
     return await Room.find({
@@ -44,7 +44,7 @@ const getRoomsByUserId = async (userId) => {
   }
 };
 
-const updateRoomStatusDao = async (roomId, status) => {
+const updateRoomStatusDao = async (roomId, status, res) => {
   try {
     return await Room.findByIdAndUpdate(
       roomId,
@@ -62,7 +62,7 @@ const updateRoomStatusDao = async (roomId, status) => {
   }
 };
 
-const deleteRoomById = async (roomId) => {
+const deleteRoomById = async (roomId, res) => {
   try {
     return await Room.findByIdAndDelete({ _id: roomId });
   } catch (error) {
@@ -74,7 +74,7 @@ const deleteRoomById = async (roomId) => {
   }
 };
 
-const updateRoomOnSendMessage = async (roomId) => {
+const updateRoomOnSendMessage = async (roomId, res) => {
   try {
     return await Room.findByIdAndUpdate(
       roomId,

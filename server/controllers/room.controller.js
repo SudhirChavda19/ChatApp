@@ -8,7 +8,7 @@ const createRoom = async (req, res) => {
   try {
     const { senderId, receiverId } = req.body;
 
-    const user = await getUserById(receiverId);
+    const user = await getUserById(receiverId, res);
     if (!user) {
       return res.status(404).json({
         status: "Fail",
@@ -16,7 +16,7 @@ const createRoom = async (req, res) => {
       });
     }
 
-    const newRoom = await createRoomDao({ senderId, receiverId });
+    const newRoom = await createRoomDao({ senderId, receiverId }, res);
 
     if (newRoom) {
       const receiverUserId = getReceiverSocketId(receiverId);
@@ -51,7 +51,7 @@ const GetRoomByUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const rooms = await getRoomsByUserId(id);
+    const rooms = await getRoomsByUserId(id, res);
 
     const unreadData = await redisClient.hGetAll(`unread:${id}`);
     // convert all values to numbers
@@ -78,7 +78,7 @@ const updateRoomStatus = async (req, res) => {
     const { id } = req.params;
     const { status, senderId } = req.body;
 
-    const room = await updateRoomStatusDao(id, status);
+    const room = await updateRoomStatusDao(id, status, res);
     if (!room) {
       return res.status(400).json({
         status: "Fail",
@@ -107,7 +107,7 @@ const removeRoom = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const room = await deleteRoomById(id);
+    const room = await deleteRoomById(id, res);
      if (!room) {
       console.log("error", "Data Not Found");
       return res.status(404).json({

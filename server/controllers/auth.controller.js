@@ -7,7 +7,7 @@ const signUp = async (req, res) => {
   try {
     const { userName, email, password } = req.body;
 
-    const user = await getUserByEmail(email)
+    const user = await getUserByEmail(email, res)
 
     if (user) {
       return res.status(400).json({
@@ -16,7 +16,7 @@ const signUp = async (req, res) => {
       });
     }
 
-    const newUser = await createUser({userName, email, password});
+    const newUser = await createUser({userName, email, password}, res);
     if (newUser) {
       return res.status(201).json({
         status: "Success",
@@ -41,7 +41,7 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
   try {
     const { email, password, fcmToken } = req.body;
-    const user = await getUserByEmail(email);
+    const user = await getUserByEmail(email, res);
     if (!user) {
       return res.status(404).json({
         status: "Fail",
@@ -58,7 +58,7 @@ const signIn = async (req, res) => {
         .json({ status: "Fail", message: "Wrong Password" });
     }
 
-    if(fcmToken) await updateUserById(user._id, {fcmToken});
+    if(fcmToken) await updateUserById(user._id, {fcmToken}, res);
     return res.status(200).json({
       status: "Success",
       message: "Signed in successfully",
@@ -76,7 +76,7 @@ const signIn = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
-    const user = await getUserByEmail(email)
+    const user = await getUserByEmail(email, res)
     if (!user) {
       return res.status(404).json({
         status: "Fail",

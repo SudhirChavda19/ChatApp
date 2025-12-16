@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/user.model");
 
-const createUser = async ({ userName, password, email }) => {
+const createUser = async ({ userName, password, email }, res) => {
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -23,7 +23,7 @@ const createUser = async ({ userName, password, email }) => {
   }
 };
 
-const getUserById = async (userId) => {
+const getUserById = async (userId, res) => {
   try {
     return await User.findOne({ _id: userId });
   } catch (error) {
@@ -35,7 +35,7 @@ const getUserById = async (userId) => {
   }
 };
 
-const updateUserById = async (userId, updatedata) => {
+const updateUserById = async (userId, updatedata, res) => {
   try {
     return await User.findByIdAndUpdate(
       userId,
@@ -53,7 +53,7 @@ const updateUserById = async (userId, updatedata) => {
   }
 };
 
-const getUserByEmail = async (email) => {
+const getUserByEmail = async (email, res) => {
   try {
     return await User.findOne({ email });
   } catch (error) {

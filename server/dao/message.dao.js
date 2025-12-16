@@ -1,7 +1,7 @@
 const Message = require("../models/message.model");
 const mongoose = require("mongoose");
 
-const createMessageDao = async ({ message, gifUrl, roomId, senderId }) => {
+const createMessageDao = async ({ message, gifUrl, roomId, senderId }, res) => {
   try {
     const roomObjectId = new mongoose.Types.ObjectId(roomId);
     const newMessage = new Message({
@@ -22,7 +22,7 @@ const createMessageDao = async ({ message, gifUrl, roomId, senderId }) => {
   }
 };
 
-const getMessagesByRoom = async (roomId, limit, page) => {
+const getMessagesByRoom = async (roomId, limit, page, res) => {
   try {
     const skip = (page - 1) * limit;
     const messages = await Message.find({ roomId })

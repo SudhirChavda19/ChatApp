@@ -30,9 +30,10 @@ const messageSlice = createSlice({
       }
     },
 
-    clearMessages: (state, action) => {
-      const { roomId } = action.payload;
-      delete state.messagesByRoom[roomId];
+    clearMessages: (state) => {
+      delete state.messagesByRoom;
+      state.loading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -54,18 +55,7 @@ const messageSlice = createSlice({
         }
 
         const room = state.messagesByRoom[roomId];
-
-        // Prepend older messages if not the first page
-        // if (page === 1) {
-          room.cachedPages[page] = { messages, hasNextPage };
-        // } else if (page > 1) {
-        //   room.messages = [...room.messages, ...messages];
-        // }
-
-        // Update pagination metadata
-        // room.pages[page] = {
-        //   hasNextPage,
-        // };
+        room.cachedPages[page] = { messages, hasNextPage };
         room.totalPages = totalPages;
         state.loading = false;
       })
