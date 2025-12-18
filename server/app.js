@@ -13,7 +13,7 @@ const MessageRoute = require("./routes/message.route.js");
 dotenv.config();
 const PORT = process.env.PORT;
 const corsOptions = {
-  origin: "https://vatchit.netlify.app/",
+  origin: "https://vatchit.netlify.app",
   methods: ["GET", "PATCH", "POST", "DELETE"],
   credentials: true,
 };
