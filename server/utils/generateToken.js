@@ -5,11 +5,12 @@ module.exports.generateTokenAndSetCookie = (userId, res) => {
     expiresIn: "5d",
   });
 
+  const isProd = process.env.NODE_ENV === "production";
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",
-    maxAge: 5 * 24 * 60 * 60 * 1000
+    maxAge: 5 * 24 * 60 * 60 * 1000,
   });
 };
