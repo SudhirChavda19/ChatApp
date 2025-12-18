@@ -141,9 +141,9 @@ function EmailPassword() {
     if (path === "/sign-up") {
       await userSignUp(data);
     } else if (path === "/sign-in") {
-      new Audio(notificationSound).play().catch(() => {
-        console.log("Audio blocked until user interacts");
-      });
+      // new Audio(notificationSound).play().catch(() => {
+      //   console.log("Audio blocked until user interacts");
+      // });
       const token = await grantNotificationPermissionAndGenerateFcmToken();
       data.fcmToken = token;
       await userSignIn(data);

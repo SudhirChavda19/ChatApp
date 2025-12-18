@@ -140,8 +140,10 @@ function ChatBox() {
   useEffect(() => {
     if (id) {
       sessionStorage.setItem("roomId", id);
-      if (!(Object.keys(messagesByRoom).length !== 0 && messagesByRoom[id]))
-        dispatch(loadMessages({ roomId: id, page: pageNoRef.current }));
+      if (messagesByRoom) {
+        if (!(Object.keys(messagesByRoom).length !== 0 && messagesByRoom[id]))
+          dispatch(loadMessages({ roomId: id, page: pageNoRef.current }));
+      }
     }
   }, [id]);
 
@@ -273,7 +275,6 @@ function ChatBox() {
 
   useEffect(() => {
     socket.on("send-receive-message", async (data) => {
-
       if (id === data.roomId) {
         setIsNewMessageReceived(true);
         setAllMessages((prev) => {
