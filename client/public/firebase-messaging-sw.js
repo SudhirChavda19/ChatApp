@@ -11,13 +11,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebas
 import { getMessaging, onBackgroundMessage } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-messaging-sw.js";
 
 const app = initializeApp({
-  apiKey: "AIzaSyAlMTSCurqKeadZnBH_RKOewMbX-j0pxjY",
-  authDomain: "vatchit-544f1.firebaseapp.com",
-  projectId: "vatchit-544f1",
-  storageBucket: "vatchit-544f1.firebasestorage.app",
-  messagingSenderId: "819680974685",
-  appId: "1:819680974685:web:db792853fdd709c2387ab4",
-  measurementId: "G-J9QEETKB2Y",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 });
 
 const messaging = getMessaging(app);
