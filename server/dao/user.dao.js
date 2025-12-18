@@ -15,7 +15,7 @@ const createUser = async ({ userName, password, email }, res) => {
     if (newUser) await newUser.save();
     return newUser;
   } catch (error) {
-    console.log("Error in create user dao :", error);
+    console.error("Error in create user dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -27,7 +27,7 @@ const getUserById = async (userId, res) => {
   try {
     return await User.findOne({ _id: userId });
   } catch (error) {
-    console.log("Error in getUserById dao :", error);
+    console.error("Error in getUserById dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -45,7 +45,7 @@ const updateUserById = async (userId, updatedata, res) => {
       }
     );
   } catch (error) {
-    console.log("Error in updateUserById dao :", error);
+    console.error("Error in updateUserById dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -57,7 +57,7 @@ const getUserByEmail = async (email, res) => {
   try {
     return await User.findOne({ email });
   } catch (error) {
-    console.log("Error in getUserByEmail dao :", error);
+    console.error("Error in getUserByEmail dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",

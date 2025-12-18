@@ -39,7 +39,7 @@ const createRoom = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log("Error in create Room controller", error);
+    console.error("Error in create Room controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -65,7 +65,7 @@ const GetRoomByUser = async (req, res) => {
       data: {rooms, unreadCounts},
     });
   } catch (error) {
-    console.log("Error in create Room controller", error);
+    console.error("Error in create Room controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -95,7 +95,7 @@ const updateRoomStatus = async (req, res) => {
         });
     }
   } catch (error) {
-    console.log("Error in updateRoomStatus controller", error);
+    console.error("Error in updateRoomStatus controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -109,7 +109,6 @@ const removeRoom = async (req, res) => {
 
     const room = await deleteRoomById(id, res);
      if (!room) {
-      console.log("error", "Data Not Found");
       return res.status(404).json({
         status: "Fail",
         message: "Data Not Found",
@@ -120,7 +119,7 @@ const removeRoom = async (req, res) => {
       message: "Room Deleted Successfully",
     });
   } catch (error) {
-    console.log("Error in removeRoom controller", error);
+    console.error("Error in removeRoom controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",

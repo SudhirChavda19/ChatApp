@@ -23,7 +23,6 @@ const app = initializeApp({
 const messaging = getMessaging(app);
 
 onBackgroundMessage(messaging, (payload) => {
-  console.log("Received background message:", payload);
   const notificationTitle = `${payload.notification.title} • VatChit`;
   const notificationOptions = {
     body: payload.notification.body,

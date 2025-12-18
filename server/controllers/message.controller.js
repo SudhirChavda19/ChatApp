@@ -50,7 +50,7 @@ const sendMessage = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log("Error in send message controller", error);
+    console.error("Error in send message controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -78,7 +78,7 @@ const GetRoomMessages = async (req, res) => {
       data: { roomId: id, messages, totalPages, page, hasNextPage },
     });
   } catch (error) {
-    console.log("Error in GetRoomMessages controller", error);
+    console.error("Error in GetRoomMessages controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",

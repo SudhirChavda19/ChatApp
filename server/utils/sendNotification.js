@@ -20,7 +20,7 @@ const sendNotification = async (body) => {
       // console.log("Notification sent to:", receiver.email);
     }
   } catch (error) {
-    console.log("Error in send Notification util", error);
+    console.error("Error in send Notification util", error);
   }
 };
 

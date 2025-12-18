@@ -93,14 +93,11 @@ function ChatBox() {
   );
 
   const loadMoreMessages = () => {
-    console.log("pageNo :", pageNoRef.current);
     if (
       Object.keys(messagesByRoom[id].cachedPages).length < pageNoRef.current
     ) {
-      console.log("loadMessages -----------------");
       dispatch(loadMessages({ roomId: id, page: pageNoRef.current }));
     } else {
-      console.log("getPreviousMessages -----------------");
       const { latestMessages, totalPages, cachedPages } = messagesByRoom[id];
       // const messagesForPage = messages
       //   ? messages.slice(
@@ -196,7 +193,7 @@ function ChatBox() {
   const SendMessageMutation = useMutation({
     mutationFn: MessageApi.SendMessage,
     onError: (error) => {
-      console.log("error :", error);
+      console.error("error :", error);
       const { message, status } = error.response.data;
       if (status === "Fail" && message) {
         setMessageServerError(message);
@@ -233,7 +230,6 @@ function ChatBox() {
   }, [id]);
 
   useEffect(() => {
-    console.log(`messageData page:`, messagesByRoom);
     if (isNewMessageReceived) {
       setIsNewMessageReceived(false);
       return;
@@ -267,7 +263,7 @@ function ChatBox() {
       }
     }
     if (error) {
-      console.log("messageError :", error);
+      console.error("messageError :", error);
     }
   }, [messagesByRoom, error]);
 
@@ -277,7 +273,6 @@ function ChatBox() {
 
   useEffect(() => {
     socket.on("send-receive-message", async (data) => {
-      console.log("message ::", data);
 
       if (id === data.roomId) {
         setIsNewMessageReceived(true);

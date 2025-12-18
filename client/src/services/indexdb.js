@@ -35,7 +35,6 @@ export const initDB = async () => {
       if (!db.objectStoreNames.contains(Stores.Users)) {
         db.createObjectStore(Stores.Users, { keyPath: "id" });
       }
-      console.log('db.objectStoreNames :', db.objectStoreNames);
       if (!db.objectStoreNames.contains(Stores.Messages)) {
         const store = db.createObjectStore(Stores.Messages, { keyPath: "id" });
         store.createIndex("timestamp", "timestamp");
@@ -46,7 +45,6 @@ export const initDB = async () => {
     request.onsuccess = () => {
       db = request.result;
       version = db.version;
-      console.log("request.onsuccess - initDB", version);
       resolve(db);
     };
 

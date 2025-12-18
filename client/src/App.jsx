@@ -26,10 +26,10 @@ function App() {
         .register("/firebase-messaging-sw.js", { type: "module" })
         .then(function (registration) {
           registration.update();
-          console.log("Service worker registration successful", registration);
+          console.log("Service worker registration successful");
         })
         .catch(function (error) {
-          console.log("Service worker registration failed", error);
+          console.error("Service worker registration failed", error);
         });
     }
   }, []);
@@ -40,7 +40,6 @@ function App() {
     }
 
     const unsubscribe = onMessage(messaging, (payload) => {
-      console.log("Message received: ", payload);
       // const sound = new Audio(notificationSound);
       //     sound.play();
 

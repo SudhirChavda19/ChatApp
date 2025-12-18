@@ -89,7 +89,7 @@ function CommonDialog({ open, onClose, signOut }) {
   const CreateRequestMutation = useMutation({
     mutationFn: RoomApi.CreateNewRequest,
     onError: (error) => {
-      console.log("error :", error);
+      console.error("error :", error);
       const { message, status } = error.response.data;
       if (status === "Fail") {
         setServerError(message);
@@ -116,7 +116,7 @@ function CommonDialog({ open, onClose, signOut }) {
       ]);
       setLoading(false);
     }
-    if (error) console.log(error);
+    if (error) console.error(error);
   }, [data, error]);
 
   useEffect(() => {
@@ -144,7 +144,7 @@ function CommonDialog({ open, onClose, signOut }) {
   const signOutMutation = useMutation({
     mutationFn: AuthApi.SignOutService,
     onError: (error) => {
-      console.log("error :", error.response.data);
+      console.error("error :", error.response.data);
     },
     onSuccess: (data) => {
       if (data.status === 200) {

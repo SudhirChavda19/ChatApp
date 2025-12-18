@@ -30,7 +30,7 @@ const signUp = async (req, res) => {
       });
     }
   } catch (error) {
-    console.log("Error in signin controller :", error);
+    console.error("Error in signin controller :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -65,7 +65,7 @@ const signIn = async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.log("Error in signin controller", error);
+    console.error("Error in signin controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -94,7 +94,7 @@ const forgotPassword = async (req, res) => {
       message: "Password updated successfully",
     });
   } catch (error) {
-    console.log("Error in forgotPassword controller", error);
+    console.error("Error in forgotPassword controller", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -109,7 +109,7 @@ const signOut = (req, res) => {
       message: "Signed out successfully",
     });
   } catch (error) {
-    console.log("Error in signOut controller", error);
+    console.error("Error in signOut controller", error);
     return res.status(500).json({
       status: "Fail",
       error: "Internal Server Error",

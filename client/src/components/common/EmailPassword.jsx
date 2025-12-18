@@ -68,7 +68,7 @@ function EmailPassword() {
   const signInMutation = useMutation({
     mutationFn: AuthApi.SignInService,
     onError: (error) => {
-      console.log("error :", error.response.data);
+      console.error("error :", error.response.data);
       const { message, status } = error.response.data;
       if (status === "Fail") {
         setServerError(message);
@@ -116,7 +116,7 @@ function EmailPassword() {
   const forgotPasswordMutation = useMutation({
     mutationFn: AuthApi.ForgotPasswordService,
     onError: (error) => {
-      console.log("error :", error.response.data);
+      console.error("error :", error.response.data);
       const { message, status } = error.response.data;
       if (status === "Fail") {
         setServerError(message);
@@ -141,11 +141,10 @@ function EmailPassword() {
     if (path === "/sign-up") {
       await userSignUp(data);
     } else if (path === "/sign-in") {
-      new Audio(notificationSound).play().catch((e) => {
-        console.log("Audio blocked until user interacts", e);
+      new Audio(notificationSound).play().catch(() => {
+        console.log("Audio blocked until user interacts");
       });
       const token = await grantNotificationPermissionAndGenerateFcmToken();
-      console.log("token :", token);
       data.fcmToken = token;
       await userSignIn(data);
     } else if (path === "/forgot-password") {

@@ -14,7 +14,7 @@ const createMessageDao = async ({ message, gifUrl, roomId, senderId }, res) => {
     if (newMessage) await newMessage.save();
     return newMessage;
   } catch (error) {
-    console.log("Error in createMessageDao :", error);
+    console.error("Error in createMessageDao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -36,7 +36,7 @@ const getMessagesByRoom = async (roomId, limit, page, res) => {
 
     return { messages: messages.reverse(), totalPages, hasNextPage };
   } catch (error) {
-    console.log("Error in getMessagesByRoom dao:", error);
+    console.error("Error in getMessagesByRoom dao:", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",

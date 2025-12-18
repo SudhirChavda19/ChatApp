@@ -12,7 +12,7 @@ const createRoomDao = async ({ senderId, receiverId }, res) => {
     if (newRoom) await newRoom.save();
     return newRoom;
   } catch (error) {
-    console.log("Error in createRoomDao :", error);
+    console.error("Error in createRoomDao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -36,7 +36,7 @@ const getRoomsByUserId = async (userId, res) => {
       .populate("participants")
       .sort({ updatedAt: -1 });
   } catch (error) {
-    console.log("Error in getRoomsByUserId Dao :", error);
+    console.error("Error in getRoomsByUserId Dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -54,7 +54,7 @@ const updateRoomStatusDao = async (roomId, status, res) => {
       }
     );
   } catch (error) {
-    console.log("Error in updateRoomStatusDao Dao :", error);
+    console.error("Error in updateRoomStatusDao Dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -66,7 +66,7 @@ const deleteRoomById = async (roomId, res) => {
   try {
     return await Room.findByIdAndDelete({ _id: roomId });
   } catch (error) {
-    console.log("Error in deleteRoomById Dao :", error);
+    console.error("Error in deleteRoomById Dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",
@@ -84,7 +84,7 @@ const updateRoomOnSendMessage = async (roomId, res) => {
       }
     );
   } catch (error) {
-    console.log("Error in updateRoomOnSendMessage Dao :", error);
+    console.error("Error in updateRoomOnSendMessage Dao :", error);
     return res.status(500).json({
       status: "Fail",
       message: "Internal Server Error",

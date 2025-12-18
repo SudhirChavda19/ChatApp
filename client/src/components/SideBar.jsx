@@ -96,7 +96,7 @@ function SideBar() {
   const RequestUpdate = useMutation({
     mutationFn: RoomApi.RequestStatusUpdate,
     onError: (error) => {
-      console.log("error :", error);
+      console.error("error :", error);
       // const { message, status } = error.response.data;
       // if (status === "Fail") {
       //   setServerError(message);
@@ -116,7 +116,7 @@ function SideBar() {
   const Removeroom = useMutation({
     mutationFn: RoomApi.RemoveRoom,
     onError: (error) => {
-      console.log("error :", error);
+      console.error("error :", error);
       // const { message, status } = error.response.data;
       // if (status === "Fail") {
       //   setServerError(message);

@@ -7,10 +7,9 @@ export const createUser = async (data, db) => {
   store.add(data);
 
   tx.oncomplete = (res) => {
-    console.log("user created: ", res);
   };
   tx.onerror = (error) => {
-    console.log("Error while create user: ", error);
+    console.error("Error while create user: ", error);
     throw new Error("Error while create user: ", error);
   };
 };
@@ -69,7 +68,7 @@ export const getRequestedUsers = async (db) => {
         }
       };
       request.onerror = (error) => {
-        console.log("error :", error);
+        console.error("error :", error);
         reject(new Error("Error while get requested users", error));
       };
     } catch (error) {
@@ -101,7 +100,7 @@ export const getConfiremedUsers = async (db) => {
         }
       };
       request.onerror = (error) => {
-        console.log("error :", error);
+        console.error("error :", error);
         reject(new Error("Error while getting confiremed users: ", error));
       };
     } catch (error) {
@@ -123,15 +122,14 @@ export const updateRequestStatus = async (id, { requested, createdAt }, db) => {
     }
     const updateRequest = objectStore.put(user);
     updateRequest.onsuccess = () => {
-      console.log(`User updated: ${updateRequest.result}`);
     };
     updateRequest.onerror = (error) => {
-      console.log("error :", error);
+      console.error("error :", error);
       throw new Error("Error while update user: ", error);
     };
   };
   request.onerror = (error) => {
-    console.log("error :", error);
+    console.error("error :", error);
     throw new Error("Error while update operation: ", error);
   };
 };

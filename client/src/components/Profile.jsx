@@ -46,13 +46,13 @@ function Profile({ open, onClose }) {
       setUserName(userName);
       setEmail(email);
     }
-    if (error) console.log("Error while getting User Data");
+    if (error) console.error("Error while getting User Data");
   }, [data]);
 
   const updateProfile = useMutation({
     mutationFn: UserApi.UpdateUser,
     onError: (error) => {
-      console.log("error :", error.response.data);
+      console.error("error :", error.response.data);
       const { message, status } = error.response.data;
       if (status === "Fail") {
         setServerError(message);

@@ -10,7 +10,6 @@ const grantNotificationPermissionAndGenerateFcmToken = async () => {
           vapidKey: import.meta.env.VITE_FIREBASE_PUBLIC_VAPID_KEY,
           serviceWorkerRegistration: registration,
         });
-        console.log("FCM Token:", token);
         return token;
       } else {
         alert("Notification Permission Denied");
