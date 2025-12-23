@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AllRoutes from "./routes/AllRoutes";
 import { messaging, onMessage } from "./firebase";
 import Notification from "./components/common/Notification";
+import Snowfall from "react-snowfall";
 import notificationSound from "./assets/notification.mp3";
 
 function App() {
@@ -50,7 +51,7 @@ function App() {
           body: payload.notification?.body || undefined,
           gifUrl: payload?.data?.gifUrl ? payload.data.gifUrl : undefined,
           roomId: payload?.data?.roomId ? payload.data.roomId : undefined,
-          show: true
+          show: true,
         });
       }
       // else {
@@ -61,7 +62,7 @@ function App() {
       //   });
       // }
 
-      setTimeout(() => setNotification({show: false}), 5000);
+      setTimeout(() => setNotification({ show: false }), 5000);
     });
 
     return () => unsubscribe();
@@ -69,6 +70,12 @@ function App() {
 
   return (
     <React.Fragment>
+      <Snowfall
+        color="#8ebce9ff"
+        // style={{ background: "#fff" }}
+        // images={images}
+        snowflakeCount={200}
+      />
       <AllRoutes />
 
       {notification && (
