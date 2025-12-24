@@ -8,10 +8,11 @@ const server = createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["https://vatchit.netlify.app, http", "http://localhost:5173"],
+    origin: ["https://vatchit.netlify.app", "http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true,
   },
+  transports: ["websocket", "polling"],
 });
 
 let users = [];
