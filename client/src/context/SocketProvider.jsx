@@ -13,9 +13,7 @@ export const SocketContextProvider = ({ children }) => {
   useEffect(() => {
     if (authUser && userId) {
       const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
-        autoConnect: false,
         transports: ["websocket"],
-        withCredentials: true,
         query: {
           userId: userId,
         },

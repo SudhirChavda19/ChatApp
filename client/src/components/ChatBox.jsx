@@ -41,7 +41,6 @@ import { addNewMessage } from "../features/message/messageSlice";
 function ChatBox() {
   const [user, setUser] = useState({});
   const [stateUserId, setStateUserId] = useState(null);
-  // const [room, setRoom] = useState({});
   const [message, setMessage] = useState("");
   const [allMessages, setAllMessages] = useState([]);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
@@ -52,23 +51,17 @@ function ChatBox() {
   const [hasMore, setHasMore] = useState(true);
   const [online, setOnline] = useState(false);
   const [messageServerError, setMessageServerError] = useState(null);
-  // const [previousScrollHeight, setPreviousScrollHeight] = useState(null);
   const [initialized, setInitialized] = useState(false);
   const [openSnackBar, setOpenSnackBar] = useState(false);
   const [unSeenMessageCount, setUnSeenMessageCount] = useState(0);
   const [userTyping, setUserTyping] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
-  // const [pageNo, setPageNo] = useState(1);
   const [isNewMessageReceived, setIsNewMessageReceived] = useState(false);
 
-  // const [lastMessageRef, setLastMessageRef] = useState(null);
-  // let pageNo = 1;
   const lastMessageRef = useRef(null);
-
   const chatRef = useRef(null);
   const isNearBottomRef = useRef(false);
   const scrollDebounceRef = useRef(null);
-
   const showNewMsgButtonRef = useRef(showNewMsgButton);
   const userTypingRef = useRef(userTyping);
   const typingTimeoutRef = useRef(null);
@@ -221,11 +214,6 @@ function ChatBox() {
 
   useEffect(() => {
     if (id) {
-      // queryClient.resetQueries({
-      //   queryKey: ["roomMessages", id],
-      //   exact: true,
-      // });
-      // messageRefetch();
       dispatch(clearUnread(id));
       socket.emit("join-room", id);
     }
@@ -512,7 +500,18 @@ function ChatBox() {
             <CircularProgress size={24} />
           </Box>
         )}
-        {userTyping || (allMessages && allMessages.length > 0) ? (
+        {loading ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 1,
+            }}
+          >
+            <CircularProgress size={24} />
+          </Box>
+        ) : userTyping || (allMessages && allMessages.length > 0) ? (
           <>
             {allMessages.map((msg, i) => (
               <div
