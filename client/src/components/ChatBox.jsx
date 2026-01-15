@@ -44,6 +44,7 @@ function ChatBox() {
   const [message, setMessage] = useState("");
   const [allMessages, setAllMessages] = useState([]);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [openEmojiPicker, setOpenEmojiPicker] = useState(false);
   const [openGifPicker, setOpenGifPicker] = useState(false);
   const [gifUrl, setgifUrl] = useState(null);
@@ -135,6 +136,7 @@ function ChatBox() {
       sessionStorage.setItem("roomId", id);
       if (messagesByRoom) {
         if (!(Object.keys(messagesByRoom).length !== 0 && messagesByRoom[id]))
+          setInitialLoading(true);
           dispatch(loadMessages({ roomId: id, page: pageNoRef.current }));
       }
     }
@@ -245,6 +247,7 @@ function ChatBox() {
         });
 
         setInitialized(true);
+        setInitialLoading(false);
         if (!hasNextPage) {
           setHasMore(false);
         }
@@ -500,7 +503,7 @@ function ChatBox() {
             <CircularProgress size={24} />
           </Box>
         )}
-        {loading ? (
+        {initialLoading ? (
           <Box
             sx={{
               display: "flex",
